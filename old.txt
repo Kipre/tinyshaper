@@ -1,0 +1,24 @@
+
+// function drawProfile(profile, board) {
+// //     ctx.beginPath();
+// //     var first = board[orders[profile][0]]
+// //     var [from_x, from_y] = get2D(profile, first['coordinates'])
+// //     ctx.moveTo(from_x, from_y);
+//     for (var i = 0; i < orders[profile].length - 1; i++) {
+//         ctx.beginPath();
+//         var first = board[orders[profile][i]]
+//         var second = board[orders[profile][i + 1]]
+//         var [from_x, from_y] = get2D(profile, first['coordinates'])
+//         var [to_x, to_y] = get2D(profile, second['coordinates'])
+//         var [after_x, after_y] = first['tangents'][profile]['after']
+//         var [before_x, before_y] = second['tangents'][profile]['before'];
+//         [after_x, after_y] = [after_x + from_x, after_y + from_y];
+//         [before_x, before_y] = [before_x + to_x, before_y + to_y];
+//         console.log([from_x, from_y],[ after_x, after_y], [before_x, before_y], [to_x, to_y])
+//         ctx.moveTo(...to([from_x, from_y]));
+//         ctx.bezierCurveTo( ...to([after_x, after_y]), ...to([before_x, before_y]), ...to([to_x, to_y]));
+//         ctx.stroke();
+//     }
+// //     ctx.fill();
+    
+// }

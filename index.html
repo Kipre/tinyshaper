@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+
+<body>
+</body>
+
+</html>
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="Mark Otto, Jacob Thornton, and Bootstrap contributors">
+    <title>Surf</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <link href="cover.css" rel="stylesheet">
+</head>
+
+<body class="text-center">
+    <div class="cover-container d-flex w-100 h-100 p-3 mx-auto flex-column">
+        <header class="masthead">
+            <div class="inner">
+                <h3 class="masthead-brand">Surf</h3>
+                <nav class="nav nav-masthead justify-content-center">
+                    <a class="nav-link active" href="#">Home</a>
+                    <a class="nav-link" href="#">Features</a>
+                    <a class="nav-link" href="#">Contact</a>
+                </nav>
+            </div>
+        </header>
+        <main role="main" class="inner cover">
+            <h1 class="cover-heading">Shape your board.</h1>
+            <div style="position: relative;">
+                <canvas class="main-canvas" id="canvas-background" style="z-index: 0;"></canvas>
+                <canvas class="main-canvas" id="canvas1" style="z-index: 1;"></canvas>
+            </div>
+            <div class="under-canvas">
+                <div class="btn-toolbar mb-3" role="toolbar" aria-label="Toolbar with button groups">
+                    <div class="btn-group mr-2" role="group" aria-label="First group">
+                        <button type="button" class="btn btn-primary" onclick="changeAxis('x');">X</button>
+                        <button type="button" class="btn btn-primary" onclick="changeAxis('x0');">X<sub>small</sub></button>
+                        <button type="button" class="btn btn-primary" onclick="changeAxis('y');">Y</button>
+                        <button type="button" class="btn btn-primary" onclick="changeAxis('z');">Z</button>
+                    </div>
+                    <div class="input-group">
+                        <div class="input-group-prepend">
+                            <div class="input-group-text" id="btnGroupAddon">Length</div>
+                        </div>
+                        <input type="text" class="form-control" aria-label="Input group example" aria-describedby="btnGroupAddon">
+                    </div>
+                    <div class="input-group">
+                        <div class="input-group-prepend">
+                            <div class="input-group-text" id="btnGroupAddon">Width</div>
+                        </div>
+                        <input type="text" class="form-control" aria-label="Input group example" aria-describedby="btnGroupAddon">
+                    </div>
+                    <div class="input-group">
+                        <div class="input-group-prepend">
+                            <div class="input-group-text" id="btnGroupAddon">Thickness</div>
+                        </div>
+                        <input type="text" class="form-control" aria-label="Input group example" aria-describedby="btnGroupAddon">
+                    </div>
+                    <div class="btn-group mr-2" role="group" aria-label="Second group">
+                        <button type="button" class="btn btn-warning" onclick="commit();">Commit</button>
+                    </div>
+                </div>
+            </div>
+            <canvas id='3d-canvas' width="497" height="372"></canvas>
+            <div>
+                <pre><code id="json_output"></code></pre>
+            </div>
+        </main>
+        <footer class="mastfoot mt-auto">
+            <div class="inner">
+                <p>Simple webapp for surf shaping, by <a href="https://twitter.com/mdo">@cyprienneverov</a>.</p>
+            </div>
+        </footer>
+    </div>
+</body>
+<script type="text/javascript" src="surf.js"></script>
+<!-- vertex shader -->
+<script id="vertex-shader-3d" type="x-shader/x-vertex">
+    attribute vec4 a_position;
+attribute vec2 a_texcoord;
+
+uniform mat4 u_matrix;
+
+varying vec2 v_texcoord;
+
+void main() {
+  // Multiply the position by the matrix.
+  gl_Position = u_matrix * a_position;
+
+  // Pass the texcoord to the fragment shader.
+  v_texcoord = a_texcoord;
+}
+</script>
+<!-- fragment shader -->
+<script id="fragment-shader-3d" type="x-shader/x-fragment">
+    precision mediump float;
+
+// Passed in from the vertex shader.
+varying vec2 v_texcoord;
+
+uniform sampler2D u_texture;
+
+void main() {
+//   gl_FragColor = vec4(v_texcoord, 0, 1);
+   gl_FragColor = texture2D(u_texture, v_texcoord);
+}
+</script>
+<!-- this is included only for iframe and requestAnimationFrame support -->
+<!--
+for most samples webgl-utils only provides shader compiling/linking and
+canvas resizing because why clutter the examples with code that's the same in every sample.
+See https://webglfundamentals.org/webgl/lessons/webgl-boilerplate.html
+and https://webglfundamentals.org/webgl/lessons/webgl-resizing-the-canvas.html
+for webgl-utils, m3, m4, and webgl-lessons-ui.
+-->
+<script src="webgl-lessons-ui.js"></script>
+<script src="webgl-utils.js"></script>
+<script src="m4.js"></script>
+<script src="3D.js"></script>
+
+</html>
