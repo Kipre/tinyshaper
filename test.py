@@ -39,5 +39,10 @@ class TestBezierCurve(unittest.TestCase):
 	# 		s.split(2)
 
 
+class TestBezierPath(unittest.TestCase):
+
+	path1 = BezierPath(np.array([[1, 2], [2, 3], [4, 2], [2, 1]]))
+
+
 if __name__ == '__main__':
 	unittest.main()

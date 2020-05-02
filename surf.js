@@ -1,492 +1,334 @@
-var WIDTH = 1000;
-var HEIGHT = 300;
+class P {
+    x = 0;
+    y = 0;
 
-
-var background = document.getElementById("canvas-background");
-background.width = WIDTH;
-background.height = HEIGHT;
-var bCtx = background.getContext("2d");
-
-
-var canvas = document.getElementById("canvas1");
-canvas.width = WIDTH;
-canvas.height = HEIGHT;
-canvas.onmousedown = myDown;
-canvas.onmouseup = myUp;
-canvas.onmousemove = myMove;
-
-var ctx = canvas.getContext("2d");
-var BB = canvas.getBoundingClientRect();
-var offsetX = BB.left;
-var offsetY = BB.top;
-
-
-
-// drag related variables
-var dragok = false;
-var startX;
-var startY;
-var rescaling;
-var padding = 40
-var points;
-
-class Point {
-    r = 5
-    isDragging = false
-    children = []
-    exists = true
-    freedom = [1, 1]
-    number = -1
-
-    constructor(x, y, rang) {
+    constructor(x, y) {
         this.x = x;
         this.y = y;
-        this.rang = rang
     }
 
-    plot() {
-        if (this.exists) {
-            if (this.rang != 0) {
-                ctx.fillStyle = "#A0A0A0";
-            } else {
-                ctx.fillStyle = "#444444";
-            }
-            ctx.beginPath();
-            ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
-            ctx.closePath();
-            ctx.fill();
+    add(other) {
+        return new P(this.x + other.x, this.y + other.y);
+    }
+
+    mul(scalar) {
+        return new P(this.x * scalar, this.y * scalar);
+    }
+
+    print() {
+        console.log(this.dest)
+    }
+
+    at(i) {
+        if (i == 0) {
+            return this.x;
+        } else if (i == 1) {
+            return this.y;
+        } else {
+            throw new Error("Axis out of bounds");
         }
     }
-    pair() {
+
+    get dest() {
         return [this.x, this.y]
     }
-    update(dx, dy) {
-        this.x += dx * this.freedom[0]
-        this.y += dy * this.freedom[1]
-    }
-}
 
-
-
-var board = JSON.parse('{    "0":    {        "is_in": ["y", "z"],        "freedom": [0, 0, 1],        "coordinates": [0, 0, 0.9758333333333338],        "tangents":        {            "z":            {                "after": [0, 0.22],                "before": [0, 0]            },            "y":            {                "before": [0.13, -0.35],                "after": [0, 0]            }        }    },    "1":    {        "is_in": ["z"],        "freedom": [1, 0, 1],        "coordinates": [0.11, 1.0, 0.23],        "tangents":        {            "z":            {                "before": [-0.03, -0.12],                "after": [0.05, 0.17]            },            "x":            {                "before": [0, 0.16],                "after": [0, -0.1]            }        }    },    "2":    {        "is_in": ["z", "x"],        "freedom": [0, 0, 1],        "coordinates": [0.5, 1.0, 0.24263888888888893],        "tangents":        {            "z":            {                "before": [-0.22, 0.02],                "after": [0.24, -0.03]            },            "x":            {                "before": [0, 0.15],                "after": [0, -0.14]            }        }    },    "3":    {        "is_in": ["z", "y"],        "freedom": [0, 0, 1],        "coordinates": [1, 0, 1.6700000000000002],        "tangents":        {            "z":            {                "before": [-0.03, 0.72],                "after": [0, 0]            },            "y":            {                "after": [-0.05, -1.08],                "before": [0, 0]            }        }    },    "4":    {        "is_in": ["x", "y"],        "freedom": [0, 0, 0],        "coordinates": [0.5, 0, 0],        "tangents":        {            "y":            {                "after": [-0.3, 0.24],                "before": [0.28, 0.1]            },            "x":            {                "before": [0.37, 0],                "after": [0, 0]            }        }    },    "5":    {        "is_in": ["y"],        "freedom": [0, 0, 1],        "coordinates": [1, 0, 1.8711111111111112],        "tangents":        {            "y":            {                "before": [-0.06, -0.69],                "after": [0, 0]            }        }    },    "6":    {        "is_in": ["x", "y"],        "freedom": [0, 0, 0],        "coordinates": [0.5, 0, 1.0000000000000004],        "tangents":        {            "y":            {                "before": [-0.17, -0.1],                "after": [0.29, 0.07]            },            "x":            {                "after": [0.49, -0.03],                "before": [0, 0]            }        }    },    "7":    {        "is_in": ["y"],        "freedom": [0, 0, 1],        "coordinates": [0, 0, 1.2899999999999996],        "tangents":        {            "y":            {                "after": [0.22, -0.14],                "before": [0, 0]            }        }    },    "8":    {        "is_in": ["x"],        "freedom": [0, 1, 1],        "coordinates": [0.5, 0.9088888888888889, 0.6194444444444446],        "tangents":        {            "x":            {                "before": [-0.08, 0.11],                "after": [0.06, -0.07]            }        }    },    "9":    {        "is_in": ["x"],        "freedom": [0, 1, 1],        "coordinates": [0.5, 0.9533333333333335, -0.04472222222222234],        "tangents":        {            "x":            {                "before": [0.03, 0.07],                "after": [-0.11, 0]            }        }    },    "10":    {        "is_in": ["x0"],        "freedom": [0, 0, 0],        "coordinates": [0.11, 0, 1.0],        "tangents":        {            "x":            {                "after": [0.37, 0],                "before": [0, 0]            }        }    },    "11":    {        "is_in": ["x0"],        "freedom": [0, 1, 1],        "coordinates": [0.11, 0.55, 0.5468518518518518],        "tangents":        {            "x":            {                "before": [-0.03, 0.1],                "after": [0.03, -0.09]            }        }    },    "12":    {        "is_in": ["x0"],        "freedom": [0, 1, 1],        "coordinates": [0.11, 0.59, 0],        "tangents":        {            "x":            {                "before": [0.01, 0.07],                "after": [-0.2, 0]            }        }    },    "13":    {        "is_in": ["x0"],        "freedom": [0, 0, 0],        "coordinates": [0.5, 0, 0],        "tangents":        {            "x":            {                "before": [0.18, 0],                "after": [0, 0]            }        }    },    "length": 225,    "width": 27.3,    "thickness": 7.2,    "cut_x0": 0.2,    "cut_x": 0.5}');
-var axis = 'z';
-var rescaling = 0
-var x_factor, y_factor;
-
-
-var orders = {
-    'z': [0, 1, 2, 3],
-    'y': [7, 6, 5, 3, 4, 0],
-    'x': [6, 8, 2, 9, 4],
-    'x0': [10, 11, 1, 12, 13]
-}
-var currentOrder;
-
-// call to draw the scene
-
-initialize(axis);
-
-function initialize(axis, currentOrders = null) {
-    drawCoordinates();
-    [x_factor, y_factor] = get2D(axis, [board['length'], board['width'], board['thickness']])
-    rescaling = Math.max(x_factor / WIDTH, y_factor / HEIGHT)
-    rescaling = 0.9 / rescaling
-    if (!currentOrders) {
-        currentOrders = orders[axis]
-    }
-    currentOrder = currentOrders
-    points = boardToPoints(axis, currentOrders, board);
-    draw();
-}
-
-function read3Coordinates(axis, point) {
-    var [x, y] = get2D(axis, point['coordinates']);
-    var [before_x, before_y] = point['tangents'][axis]['before'];
-    var [after_x, after_y] = point['tangents'][axis]['after'];
-    return [[before_x + x, before_y + y],
-            [x, y],
-            [after_x + x, after_y + y]]
-}
-
-function commit(output=true) {
-    var new_board = pointsToBoard(axis, points, currentOrder)
-    if (output) {
-        var output = document.getElementById("json_output");
-        output.innerHTML = JSON.stringify(new_board)
-    }
-    board = new_board
-    initialize(axis)
-}
-
-function changeAxis(currentAxis) {
-    if (currentAxis == 'x0') {
-        initialize('x', orders['x0'])
-        axis = 'x'
-    } else {
-        initialize(currentAxis)
-        axis = currentAxis
-    }
-    draw()
-}
-
-function drawaxis(points) {
-    ctx.lineWidth = 2;
-    ctx.fillStyle = "rgba(45, 252, 194, 0.3)";
-    ctx.beginPath()
-    ctx.moveTo(...points[1].pair());
-    for (var i = 1; i < points.length - 3; i += 3) {
-        ctx.bezierCurveTo(...points[i + 1].pair(), ...points[i + 2].pair(), ...points[i + 3].pair());
-    }
-    ctx.closePath()
-    ctx.fill()
-    ctx.stroke()
-}
-
-function drawPoints(points) {
-    ctx.lineWidth = 1;
-    for (var i = 0; i < points.length; i++) {
-        var point = points[i];
-        if (point.rang == 0) {
-            ctx.beginPath();
-            ctx.moveTo(...point.pair());
-            if (points[i - 1].exists) {
-                ctx.lineTo(...points[i - 1].pair());
-            }
-            ctx.moveTo(...point.pair());
-            if (points[i + 1].exists) {
-                ctx.lineTo(...points[i + 1].pair());
-            }
-            ctx.stroke();
+    assignAt(axis, val) {
+        if (axis == 0) {
+            this.x = val;
+        } else if (axis == 1) {
+            this.y = val;
+        } else {
+            throw new Error("Axis out of bounds");
         }
-        point.plot()
+        return this;
     }
+
+
 }
 
-function updateCoordinates(axis, coordinates, updates) {
-    var [x, y, z] = coordinates;
-    var [new_x, new_y] = from(updates);
-    if (axis == 'x') {
-        return [x, new_x, new_y];
-    } else if (axis == 'y') {
-        return [new_x, y, new_y];
-    } else if (axis == 'z') {
-        return [new_x, new_y, z];
+
+class BezierCurve {
+
+    constructor(points) {
+        this.a = new P(...points[0]);
+        this.b = new P(...points[1]);
+        this.c = new P(...points[2]);
+        this.d = new P(...points[3]);
     }
-}
 
-function pointsToBoard(axis, points, order) {
-    var new_board = JSON.parse(JSON.stringify(board))
-    for (var i = 0; i < order.length; i++) {
-        var point = points[3 * i + 1];
-        var [x, y] = from(point.pair());
-        [x, y] = [round(x), round(y)]
-        new_board[point.number]['coordinates'] = updateCoordinates(axis, new_board[point.number]['coordinates'], point.pair());
-        var [s_x, s_y] = from(points[3 * i].pair());
-        new_board[point.number]['tangents'][axis]['before'] = [round(s_x - x), round(s_y - y)];
-        [s_x, s_y] = from(points[3 * i + 2].pair());
-        new_board[point.number]['tangents'][axis]['after'] = [round(s_x - x), round(s_y - y)];
+    evaluate(t) {
+        const opp = 1 - t;
+        var accumulator = this.a.mul(opp ** 3);
+        accumulator = accumulator.add(this.b.mul(3 * opp ** 2 * t));
+        accumulator = accumulator.add(this.c.mul(3 * opp * t ** 2));
+        accumulator = accumulator.add(this.d.mul(t ** 3));
+        return accumulator;
     }
-    return adjustCuts(new_board)
-}
 
-function adjustCuts(board) {
-    const x_cut = board['cut_x']
-    orders['x'].forEarch((p, i) => {
-        p['coordinates'][0] = x_cut;
-    });
-    const x0_cut = board['cut_x0']
-    orders['x0'].forEarch((p, i) => {
-        p['coordinates'][0] = x0_cut;
-    });
-    return board
-}
-
-function round(value) {
-    return Math.round(value * 100) / 100
-}
-
-function boardToPoints(axis, order, board) {
-    var points = []
-    for (var i = 0; i < order.length; i++) {
-        var point = board[order[i]]
-        var [x, y] = get2D(axis, point['coordinates']);
-        var new_point = new Point(...to([x, y]), 0);
-        new_point.freedom = get2D(axis, point['freedom']);
-        new_point.number = order[i]
-
-        var [before_x, before_y] = point['tangents'][axis]['before'];
-        var sub_point = new Point(...to([before_x + x, before_y + y]), 1)
-        sub_point.exists = !(before_x == 0 && before_y == 0)
-        if (!sub_point.exists) {
-            sub_point.freedom = new_point.freedom;
+    project(nbPoints = 50) {
+        var values = [];
+        for (var k = 0; k < nbPoints; k++) {
+            values.push(this.evaluate(k / nbPoints))
         }
-        points.push(sub_point);
-
-        points.push(new_point);
-
-        var [after_x, after_y] = point['tangents'][axis]['after'];
-        sub_point = new Point(...to([after_x + x, after_y + y]), -1);
-        sub_point.exists = !(after_x == 0 && after_y == 0);
-        if (!sub_point.exists) {
-            sub_point.freedom = new_point.freedom;
-        }
-        points.push(sub_point);
+        return values
     }
-    return points
-}
 
-function to([x, y]) {
-    if (axis !== null) {
-        y *= y_factor
-        y *= -rescaling
-        y += HEIGHT - padding
-        x *= x_factor
-        x *= rescaling
-        x += padding
-        return [x, y]
-    } else {
-        throw "axis not initialized";
+    get points() {
+        return [this.a, this.b, this.c, this.d];
     }
-}
 
-function from([x, y]) {
-    if (axis !== null) {
-        y -= HEIGHT - padding
-        y /= -rescaling
-        y /= y_factor
-        x -= padding
-        x /= rescaling
-        x /= x_factor
-        return [x, y]
-    } else {
-        throw "axis not initialized";
+    get dest() {
+        return [this.a.dest, this.b.dest, this.c.dest, this.d.dest];
     }
-}
 
-function get2D(axis, point) {
-    var [x, y, z] = point
-    if (axis == 'x') {
-        return [y, z]
-    } else if (axis == 'y') {
-        return [x, z]
-    } else if (axis == 'z') {
-        return [x, y]
-    }
-}
-
-function drawCoordinates() {
-    bCtx.lineWidth = 1;
-    bCtx.beginPath();
-    bCtx.moveTo(padding, 0);
-    bCtx.lineTo(padding, HEIGHT - padding);
-    bCtx.lineTo(WIDTH, HEIGHT - padding);
-    bCtx.stroke();
-    bCtx.lineWidth = 2;
-}
-
-function drawPosition(mx, my) {
-    bCtx.clearRect(0.75 * WIDTH, 0, WIDTH, 0.20 * HEIGHT);
-    bCtx.font = "15px Arial";
-    var [p_x, p_y] = from([mx, my])
-    bCtx.fillText(mx.toFixed(2).toString() + " " + my.toFixed(2).toString(), 0.85 * WIDTH, 0.20 * HEIGHT);
-    bCtx.fillText(p_x.toFixed(2).toString() + " " + p_y.toFixed(2).toString(), 0.85 * WIDTH, 0.10 * HEIGHT);
-}
-
-// clear the canvas
-function clear() {
-    ctx.clearRect(0, 0, WIDTH, HEIGHT);
-}
-
-// redraw the scene
-function draw() {
-    clear();
-    drawaxis(points);
-    drawPoints(points);
-}
-
-
-// handle mousedown events
-function myDown(e) {
-    BB = canvas.getBoundingClientRect();
-    offsetX = BB.left;
-    offsetY = BB.top;
-
-    // tell the browser we're handling this mouse event
-    e.preventDefault();
-    e.stopPropagation();
-
-    // get the current mouse position
-    var mx = parseInt(e.clientX - offsetX);
-    var my = parseInt(e.clientY - offsetY);
-
-    // test each shape to see if mouse is inside
-    dragok = false;
-    for (var i = 0; i < points.length; i++) {
-        var p = points[i];
-        var dx = p.x - mx;
-        var dy = p.y - my;
-        // test if the mouse is inside this circle
-        if (dx * dx + dy * dy < p.r * p.r && p.exists) {
-            dragok = true;
-            p.isDragging = true;
-            if (p.rang == 0) {
-                points[i - 1].isDragging = true;
-                points[i + 1].isDragging = true;
+    getT(x, axis = 0, precision = 0.001) {
+        var [l, h] = [0, 1];
+        var m, em, el, eh = 0;
+        el = this.evaluate(l).at(axis) - x;
+        while (Math.abs(l - h) > precision) {
+            m = (l + h) / 2;
+            em = this.evaluate(m).at(axis) - x;
+            if (em * el > 0) {
+                l = m;
+                el = em;
+            } else {
+                h = m;
+                eh = em
             }
         }
-        // decide if the shape is a rect or circle               
-
+        return m;
     }
-    // save the current mouse position
-    startX = mx;
-    startY = my;
+
+    split(t, axis = 0) {
+        var pos = (t, a, b) => a.mul(t).add(b.mul(1 - t))
+        const b12 = pos(t, this.b, this.c)
+        const b11 = pos(t, this.a, this.b)
+        const b13 = pos(t, this.c, this.d)
+        const b22 = pos(t, b11, b12)
+        const b23 = pos(t, b12, b13)
+        const b33 = pos(t, b22, b23)
+        return [new BezierCurve([this.a.dest, b11.dest, b22.dest, b33.dest]), new BezierCurve([b33.dest, b23.dest, b13.dest, this.d.dest])]
+    }
+
+    isIn(x, axis = 0) {
+        if ((this.a.at(axis) <= x) & (this.d.at(axis) >= x)) {
+            return true;
+        } else if ((this.a.at(axis) >= x) & (this.d.at(axis) <= x)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    plot(ctx) {
+        ctx.beginPath();
+        ctx.moveTo(...this.a.mul(500).dest);
+        ctx.bezierCurveTo(...this.b.mul(500).dest, ...this.c.mul(500).dest, ...this.d.mul(500).dest);
+        ctx.stroke();
+    }
 }
 
 
-// handle mouseup events
-function myUp(e) {
-    // tell the browser we're handling this mouse event
-    e.preventDefault();
-    e.stopPropagation();
+class BezierPath {
 
-    // clear all the dragging flags
-    dragok = false;
-    for (var i = 0; i < points.length; i++) {
-        points[i].isDragging = false;
+    curves = []
+
+    constructor(points) {
+        for (var i = 0; i < (points.length - 1) / 3; i++) {
+            this.curves.push(new BezierCurve(points.slice(i * 3, (i + 1) * 3 + 1)))
+        }
+    }
+
+    get(x, axis = 0) {
+        var i = 0;
+        while (i < this.curves.length) {
+            if (this.curves[i].isIn(x, axis)) {
+                break;
+            }
+            i++;
+        }
+        const t = this.curves[i].getT(x, axis);
+        return this.curves[i].evaluate(t)
+    }
+
+    addPoint(x, axis = 0) {
+        var i = 0;
+        while (i < this.curves.length) {
+            if (this.curves[i].isIn(x, axis)) {
+                break;
+            }
+            i++;
+        }
+        var curve = this.curves[i];
+        this.curves.splice(i, 1);
+        const t = curve.getT(x, axis);
+        var [c1, c2] = curve.split(1 - t, axis);
+        this.curves.splice(i, 0, c1, c2);
+    }
+
+    get dest() {
+        var result = [...this.curves[0].dest];
+        for (var i = 1; i < this.curves.length; i++) {
+            const [w, x, y, z] = this.curves[i].dest;
+            result.push(x, y, z);
+        }
+        return result;
+    }
+
+    get points() {
+        var result = [...this.curves[0].points];
+        for (var i = 1; i < this.curves.length; i++) {
+            const [w, x, y, z] = this.curves[i].points;
+            result.push(x, y, z);
+        }
+        return result;
+    }
+
+    project(nbPoints=10) {
+        var result = [];
+        this.curves.forEach((curve) => {
+            result.push(...curve.project(nbPoints))
+        });
+        return result;
+    }
+
+    intercalate(factors, other) {
+        console.assert(this.curves.length == other.curves.length);
+        console.assert(factors.length == this.curves.length + 1);
+
+        const a = this.points;
+        const b = other.points;
+        var inBetween = []
+
+        var factorsArray = [factors[0], factors[0]]
+        var i;
+        for (i = 1; i < factors.length - 1; i++) {
+            factorsArray.push(factors[i], factors[i], factors[i])
+        }
+        factorsArray.push(factors[i], factors[i])
+
+        for (i = 0; i < factorsArray.length; i++) {
+            inBetween.push(a[i].mul(1 - factorsArray[i]).add(b[i].mul(factorsArray[i])).dest)
+        }
+        return new BezierPath(inBetween)
+    }
+
+    intercalateZero(factors, axis = 1) {
+        var tmp = this.points;
+        tmp = tmp.map((p) => {
+            var a = p.dest;
+            a[axis] = 0;
+            return a;
+        });
+        var other = new BezierPath(tmp);
+        return other.intercalate(factors, this);
+    }
+
+    plot(ctx) {
+        this.curves.forEach((c) => c.plot(ctx))
     }
 }
 
+class Board {
 
-// handle mouse moves
-function myMove(e) {
-    // if we're dragging anything.
-    var mx = parseInt(e.clientX - offsetX);
-    var my = parseInt(e.clientY - offsetY);
-    if (dragok) {
+    constructor(board) {
+        this.x = new BezierPath(board['x'].map((p) => p.slice(0, 2)));
+        this.x0 = new BezierPath(board['x0'].map((p) => p.slice(0, 2)));
+        this.yUp = new BezierPath(board['y'].slice(0, 7).map((p) => p.slice(0, 2)));
+        this.yDown = new BezierPath(board['y'].reverse().slice(0, 7).map((p) => p.slice(0, 2)));
+        this.z = new BezierPath(board['z'].map((p) => p.slice(0, 2)));
+        this.length = board['length'];
+        this.width = board['width'];
+        this.thickness = board['thickness'];
+        this.x_cut = board['z'][6][0];
+        this.x0_cut = board['z'][3][0];
 
-        // tell the browser we're handling this mouse event
-        e.preventDefault();
-        e.stopPropagation();
+        this.yUp.addPoint(this.x0_cut);
+        this.yDown.addPoint(this.x0_cut);
 
-        // get the current mouse position
+        var y_factors = [];
+        const x = this.x.dest;
+        const x0 = this.x0.dest;
+        for (var i = 0; i < x.length; i++) {
+            const a = x[i][1];
+            const b = x0[i][1];
+            y_factors.push([b, b, a, a])
+        }
+        this.y_paths = y_factors.map((factors) => this.yDown.intercalate(factors, this.yUp));
 
-        // calculate the distance the mouse has moved
-        // since the last mousemove
-        var dx = mx - startX;
-        var dy = my - startY;
+        var z_factors = [];
+        for (var i = 0; i < x.length; i++) {
+            const a = x[i][0];
+            const b = x0[i][0];
+            z_factors.push([b, b, a, a])
+        }
+        this.z_paths = z_factors.map((factors) => this.z.intercalateZero(factors))
+    }
 
-        // move each rect that isDragging 
-        // by the distance the mouse has moved
-        // since the last mousemove
-        for (var i = 0; i < points.length; i++) {
-            var p = points[i];
-            if (p.isDragging) {
-                p.update(dx, dy)
+    getCut(x) {
+        var result = [];
+        for (var i = 0; i < this.x.dest.length; i++) {
+            const a = this.z_paths[i].get(x).at(1);
+            const b = this.y_paths[i].get(x).at(1);
+            result.push([a, b])
+        }
+        return new BezierPath(result)
+    }
+
+    getFullCut(x) {
+        var result = [];
+        for (var i = 0; i < this.x.dest.length; i++) {
+            const a = this.z_paths[i].get(x).at(1);
+            const b = this.y_paths[i].get(x).at(1);
+            result.push([a, b])
+        }
+        for (var i = result.length-2; i >= 0 ; i--) {
+            let [a, b] = result[i]
+            result.push([-a, b])
+        }
+        return new BezierPath(result)
+    }
+
+    get3d(numDivisions=30) {
+        const positions = [];
+        const texcoords = [];
+        const indices = [];
+
+        var points = this.getFullCut(0.5).project()
+
+        const quadsDown = points.length;
+
+        // generate points
+        for (let division = 0; division <= numDivisions; ++division) {
+            const u = division / numDivisions;
+            points = this.getFullCut(division/numDivisions).project()
+            points.forEach((p, ndx) => {
+                positions.push(p.x*this.width, p.y*this.thickness, division*this.length/numDivisions - this.length/2);
+                // note: this V is wrong. It's spacing by ndx instead of distance along curve
+                const v = ndx / quadsDown;
+                texcoords.push(u, v); // v?
+            });
+        }
+
+        // generate indices
+        for (let division = 0; division < numDivisions; ++division) {
+            const column1Offset = division * points.length;
+            const column2Offset = column1Offset + points.length;
+            for (let quad = 0; quad < quadsDown; ++quad) {
+                indices.push(column1Offset + quad, column1Offset + quad + 1, column2Offset + quad);
+                indices.push(column1Offset + quad + 1, column2Offset + quad + 1, column2Offset + quad);
             }
         }
 
-        // redraw the scene with the new rect positions
-        draw();
-
-        // reset the starting mouse position for the next mousemove
-        startX = mx;
-        startY = my;
-
+        return {
+            position: positions,
+            texcoord: texcoords,
+            indices: indices,
+        };
     }
-    drawPosition(mx, my)
 }
 
-function toCanvasCoordinates(x, y) {
-    y *= -rescaling
-    y += HEIGHT - padding
-    x *= rescaling
-    x += padding
-    return [x, y]
-}
+var board = JSON.parse('{"y": [[0, 1.2899999999999996, 0, 1, 7],[0.22, 1.1499999999999995, 1, 1, -1],[0.32999999999999996, 0.9000000000000005, 1, 1, -2],[0.5, 1.0000000000000004, 0, 0, 6],[0.79, 1.0700000000000005, 1, 1, -1],[0.94, 1.1811111111111112, 1, 1, -2],[1, 1.8711111111111112, 0, 1, 5],[1, 1.6700000000000002, 0, 1, 3],[0.95, 0.5900000000000001, 1, 1, -1],[0.78, 0.1, 1, 1, -2],[0.5, 0, 0, 0, 4],[0.2, 0.24, 1, 1, -1],[0.13, 0.6258333333333338, 1, 1, -2],[0, 0.9758333333333338, 0, 1, 0]    ],    "x": [[0, 1.0000000000000004, 0, 0, 6],[0.4866666666666667, 0.9747222222222227, 1, 1, -1],[0.8322222222222223, 0.7276851851851853, 1, 1, -2],[0.9088888888888889, 0.6194444444444446, 1, 1, 8],[0.9677777777777777, 0.5491203703703705, 1, 1, -1],[0.9999999999999999, 0.3858796296296297, 1, 1, -2],[0.9999999999999999, 0.24263888888888893, 0, 1, 2],[0.9977777777777777, 0.10361111111111113, 1, 1, -1],[0.98, 0.025601851851851924, 1, 1, -2],[0.9533333333333335, -0.04472222222222234, 1, 1, 9],[0.8433333333333334, -0.04472222222222234, 1, 1, -1],[0.37, 0, 1, 1, -2],[0, 0, 0, 0, 4]    ],    "x0": [[0, 1, 0, 0, 10],[0.37, 1, 1, 1, -1],[0.8377777777777778, 0.8659259259259259, 1, 1, -2],[0.92, 0.6900925925925926, 1, 1, 11],[0.9877777777777778, 0.5579629629629631, 1, 1, -1],[1, 0.38999999999999996, 1, 1, -2],[1, 0.23000000000000004, 0, 1, 1],[1, 0.13000000000000003, 1, 1, -1],[1.0022222222222221, 0.07842592592592605, 1, 1, -2],[0.9988888888888888, 0, 1, 1, 12],[0.7988888888888888, 0, 1, 1, -1],[0.18, 0, 1, 1, -2],[0, 0, 0, 0, 13]    ],    "z": [[0, 0, 0, 0, 0],[0, 0.21673992673992679, 1, 1, -1],[0.026666666666666672, 0.36978021978021974, 1, 1, -2],[0.06, 0.4925274725274724, 1, 1, 1],[0.10222222222222223, 0.6610622710622709, 1, 1, -1],[0.2811111111111111, 1.0183150183150182, 1, 1, -2],[0.5, 0.9999999999999999, 0, 0, 2],[0.7433333333333333, 0.9725274725274724, 1, 1, -1],[0.9733333333333334, 0.717985347985348, 1, 1, -2],[1, 0, 0, 0, 3]    ],    "length": 225,    "width": 27.3,    "thickness": 7.2,    "cut_x0": 0.2,    "cut_x": 0.5}');
 
-function fromCanvasCoordinates(x, y) {
-    y -= padding - HEIGHT
-    y /= -rescaling
-    x -= padding
-    x /= rescaling
-    return [x, y]
-}
-
-// require.undef('surf_widget');
-
-// define('surf_widget', ["@jupyter-widgets/base"], function(widgets) {
-
-//     var SurfView = widgets.DOMWidgetView.extend({
-
-//         // Render the view.
-//         render: function() {
-//             this.canvas = document.createElement('canvas');
-//             this.canvas.id = 'canvas';
-//             this.canvas.width = WIDTH;
-//             this.canvas.height = HEIGHT;
-//             // listen for mouse events
-//             canvas = this.canvas;
-//             ctx = canvas.getContext("2d");
-//             BB = canvas.getBoundingClientRect();
-//             offsetX = BB.left;
-//             offsetY = BB.top;
-//             points = this.model.get('points')
-
-//             console.log(this.model.get('test1'))
-
-//             rescaling = 0
-//             for (var i = 0; i < points.length; i++) {
-//                 rescaling = Math.max(rescaling, points[i][0] / WIDTH, points[i][1] / HEIGHT)
-//             }
-//             rescaling = 0.9 / rescaling
-
-//             local_points = []
-
-//             this.canvas.onmousedown = myDown;
-//             this.canvas.onmouseup = myUp;
-//             this.canvas.onmousemove = myMove;
-
-//             for (var i = 0; i < points.length; i++) {
-//                 var [x_new, y_new] = toCanvasCoordinates(points[i][0], points[i][1])
-//                 var current_point = new Point(x_new, y_new, points[i][2])
-
-//                 current_point.frozenX = !!points[i][3]
-//                 current_point.frozenY = !!points[i][4]
-//                 local_points.push(current_point);
-//             }
-
-//             for (var i = 0; i < local_points.length; i++) {
-//                 var current_point = local_points[i]
-//                 if (current_point.rang != 0) {
-//                     local_points[i + current_point.rang].children.push(-1 * current_point.rang)
-//                 }
-//             }
-
-//             // call to draw the scene
-//             draw();
-
-
-//             this.el.appendChild(this.canvas);
-
-//             // Python -> JavaScript update
-//             // this.model.on('change:value', this.value_changed, this);
-
-//             // JavaScript -> Python update
-//             // this.email_input.onchange = this.input_changed.bind(this);
-//         },
-
-//         value_changed: function() {
-//             this.email_input.value = this.model.get('value');
-//         },
-
-//         input_changed: function() {
-//             this.model.set('value', this.email_input.value);
-//             this.model.save_changes();
-//         },
-//     });
-
-//     return {
-//         SurfView: SurfView
-//     };
-// });
-
+var rBoard = new Board(board);

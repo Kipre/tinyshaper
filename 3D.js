@@ -13,20 +13,20 @@ function main() {
 //     curvePoints[pointIndex] = [x/maxX, y/maxY]
 //   }
 
-  function makeSlice(board, place=null) {
-    var points = [];
-    for (var i=0; i<orders['x'].length; i++) {
-      var point = board[orders['x'][i]];
-      points.push(...read3Coordinates('x', point));
-    }
-    points.pop();
-    points.shift();
-    var result = [].concat(points);
-    points.pop();
-    return result.concat(points.reverse().map(([x, y]) => [-x, y]));
-  }
+  // function makeSlice(board, place=null) {
+  //   var points = [];
+  //   for (var i=0; i<orders['x'].length; i++) {
+  //     var point = board[orders['x'][i]];
+  //     points.push(...read3Coordinates('x', point));
+  //   }
+  //   points.pop();
+  //   points.shift();
+  //   var result = [].concat(points);
+  //   points.pop();
+  //   return result.concat(points.reverse().map(([x, y]) => [-x, y]));
+  // }
 
-  const slicePoints = makeSlice(board);
+  // const slicePoints = makeSlice(board);
 
   // Get A WebGL context
   /** @type {HTMLCanvasElement} */
@@ -38,16 +38,17 @@ function main() {
 
   const data = {
     tolerance: 0.15,
-    numDivisions: 10,
+    numDivisions: 60,
     distance: 5,
-    triangles: true
+    triangles: false
   };
 
   function generateMesh(bufferInfo) {
 //     const tempPoints = getPointsOnBezierCurves(curvePoints, data.tolerance);
-    const sPoints = getPointsOnBezierCurves(slicePoints, data.tolerance);
+//     const sPoints = getPointsOnBezierCurves(slicePoints, data.tolerance);
 //     const points = simplifyPoints(tempPoints, 0, tempPoints.length, data.distance);
-    const arrays = splitPoints(sPoints, data['numDivisions'])
+    // const arrays = splitPoints(sPoints, data['numDivisions'])
+    const arrays = rBoard.get3d(data['numDivisions']);
 //     const arrays = lathePoints(points, data.startAngle, data.endAngle, data.divisions, data.capStart, data.capEnd);
     const extents = getExtents(arrays.position);
     if (!bufferInfo) {

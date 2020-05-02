@@ -39,15 +39,14 @@ class BezierCurve:
     
     def split(self, t, axis=0):
         """http://web.mit.edu/hyperbook/Patrikalakis-Maekawa-Cho/node13.html"""
-        b00, b01, b02, b03 = self.a, self.b, self.c, self.d
         pos = lambda t, a, b: a*t + b*(1-t)
-        b12 = pos(t, b01, b02)
-        b11 = pos(t, b00, b01)
-        b13 = pos(t, b02, b03)
+        b12 = pos(t, self.b, self.c)
+        b11 = pos(t, self.a, self.b)
+        b13 = pos(t, self.c, self.d)
         b22 = pos(t, b11, b12)
         b23 = pos(t, b12, b13)
         b33 = pos(t, b22, b23)
-        return BezierCurve([b00, b11, b22, b33]), BezierCurve([b33, b23, b13, b03])
+        return BezierCurve([self.a, b11, b22, b33]), BezierCurve([b33, b23, b13, self.d])
     
     def is_in(self, x, axis=0):
         if self.a[axis] < x and self.d[axis] > x:
