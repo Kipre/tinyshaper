@@ -2,9 +2,13 @@ class P {
     x = 0;
     y = 0;
 
-    constructor(x, y) {
+    constructor(x, y, freedomX, freedomY, number) {
         this.x = x;
         this.y = y;
+        this.freedomX = freedomX;
+        this.freedomY = freedomY;
+        this.number = number;
+
     }
 
     add(other) {
@@ -20,18 +24,17 @@ class P {
     }
 
     at(i) {
-        if (i == 0) {
-            return this.x;
-        } else if (i == 1) {
-            return this.y;
-        } else {
-            throw new Error("Axis out of bounds");
-        }
+        return this.dest[i]
     }
 
     get dest() {
         return [this.x, this.y]
     }
+
+    get fullDest() {
+        return [this.x, this.y, this.freedomX, this.freedomY, this.number]
+    }
+
 
     assignAt(axis, val) {
         if (axis == 0) {
@@ -126,6 +129,10 @@ class BezierCurve {
         ctx.moveTo(...this.a.mul(500).dest);
         ctx.bezierCurveTo(...this.b.mul(500).dest, ...this.c.mul(500).dest, ...this.d.mul(500).dest);
         ctx.stroke();
+    }
+
+    reversed() {
+        return new BezierCurve([this.d, this.c, this.b, this.a]);
     }
 }
 
@@ -228,16 +235,29 @@ class BezierPath {
     plot(ctx) {
         this.curves.forEach((c) => c.plot(ctx))
     }
+
+    reversed() {
+        return new BezierPath(this.curves.reduce((acc, ele) => {acc.unshift(ele.reversed()); return acc}, []))
+    }
+
+    concatenate(other) {
+        var result = new BezierPath([])
+        result.curves = [...this.curves]
+        const beginning = this.curves[this.curves.length - 1].d
+        const end = other.curves[0].a
+        result.curves.push(BezierCurve(beginning, beginning, end, end), ...other.curves)
+        return result
+    }
 }
 
 class Board {
 
     constructor(board) {
-        this.x = new BezierPath(board['x'].map((p) => p.slice(0, 2)));
-        this.x0 = new BezierPath(board['x0'].map((p) => p.slice(0, 2)));
-        this.yUp = new BezierPath(board['y'].slice(0, 7).map((p) => p.slice(0, 2)));
-        this.yDown = new BezierPath(board['y'].reverse().slice(0, 7).map((p) => p.slice(0, 2)));
-        this.z = new BezierPath(board['z'].map((p) => p.slice(0, 2)));
+        this.x = new BezierPath(board['x']);
+        this.x0 = new BezierPath(board['x0']);
+        this.yUp = new BezierPath(board['y'].slice(0, 7));
+        this.yDown = new BezierPath(board['y'].reverse().slice(0, 7));
+        this.z = new BezierPath(board['z']);
         this.length = board['length'];
         this.width = board['width'];
         this.thickness = board['thickness'];
@@ -264,6 +284,10 @@ class Board {
             z_factors.push([b, b, a, a])
         }
         this.z_paths = z_factors.map((factors) => this.z.intercalateZero(factors))
+    }
+
+    get y() {
+        return this.yUp.concatenate(this.yDown.reversed())
     }
 
     getCut(x) {
@@ -297,7 +321,7 @@ class Board {
 
         var points = this.getFullCut(0.5).project()
 
-        const quadsDown = points.length;
+        const quadsDown = points.length-1;
 
         // generate points
         for (let division = 0; division <= numDivisions; ++division) {
@@ -329,6 +353,4 @@ class Board {
     }
 }
 
-var board = JSON.parse('{"y": [[0, 1.2899999999999996, 0, 1, 7],[0.22, 1.1499999999999995, 1, 1, -1],[0.32999999999999996, 0.9000000000000005, 1, 1, -2],[0.5, 1.0000000000000004, 0, 0, 6],[0.79, 1.0700000000000005, 1, 1, -1],[0.94, 1.1811111111111112, 1, 1, -2],[1, 1.8711111111111112, 0, 1, 5],[1, 1.6700000000000002, 0, 1, 3],[0.95, 0.5900000000000001, 1, 1, -1],[0.78, 0.1, 1, 1, -2],[0.5, 0, 0, 0, 4],[0.2, 0.24, 1, 1, -1],[0.13, 0.6258333333333338, 1, 1, -2],[0, 0.9758333333333338, 0, 1, 0]    ],    "x": [[0, 1.0000000000000004, 0, 0, 6],[0.4866666666666667, 0.9747222222222227, 1, 1, -1],[0.8322222222222223, 0.7276851851851853, 1, 1, -2],[0.9088888888888889, 0.6194444444444446, 1, 1, 8],[0.9677777777777777, 0.5491203703703705, 1, 1, -1],[0.9999999999999999, 0.3858796296296297, 1, 1, -2],[0.9999999999999999, 0.24263888888888893, 0, 1, 2],[0.9977777777777777, 0.10361111111111113, 1, 1, -1],[0.98, 0.025601851851851924, 1, 1, -2],[0.9533333333333335, -0.04472222222222234, 1, 1, 9],[0.8433333333333334, -0.04472222222222234, 1, 1, -1],[0.37, 0, 1, 1, -2],[0, 0, 0, 0, 4]    ],    "x0": [[0, 1, 0, 0, 10],[0.37, 1, 1, 1, -1],[0.8377777777777778, 0.8659259259259259, 1, 1, -2],[0.92, 0.6900925925925926, 1, 1, 11],[0.9877777777777778, 0.5579629629629631, 1, 1, -1],[1, 0.38999999999999996, 1, 1, -2],[1, 0.23000000000000004, 0, 1, 1],[1, 0.13000000000000003, 1, 1, -1],[1.0022222222222221, 0.07842592592592605, 1, 1, -2],[0.9988888888888888, 0, 1, 1, 12],[0.7988888888888888, 0, 1, 1, -1],[0.18, 0, 1, 1, -2],[0, 0, 0, 0, 13]    ],    "z": [[0, 0, 0, 0, 0],[0, 0.21673992673992679, 1, 1, -1],[0.026666666666666672, 0.36978021978021974, 1, 1, -2],[0.06, 0.4925274725274724, 1, 1, 1],[0.10222222222222223, 0.6610622710622709, 1, 1, -1],[0.2811111111111111, 1.0183150183150182, 1, 1, -2],[0.5, 0.9999999999999999, 0, 0, 2],[0.7433333333333333, 0.9725274725274724, 1, 1, -1],[0.9733333333333334, 0.717985347985348, 1, 1, -2],[1, 0, 0, 0, 3]    ],    "length": 225,    "width": 27.3,    "thickness": 7.2,    "cut_x0": 0.2,    "cut_x": 0.5}');
-
-var rBoard = new Board(board);
+   

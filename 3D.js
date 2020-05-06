@@ -2,6 +2,7 @@
 
 const svg = "m44,434c18,-33 19,-66 15,-111c-4,-45 -37,-104 -39,-132c-2,-28 11,-51 16,-81c5,-30 3,-63 -36,-63";
 
+
 function main() {
   const opt = getQueryParams();
   const curvePoints = parseSVGPath(svg);
@@ -32,6 +33,10 @@ function main() {
   /** @type {HTMLCanvasElement} */
   const canvas = document.getElementById("3d-canvas");
   const gl = canvas.getContext("webgl");
+  window.addEventListener('resize', () => {let actual = canvas.getBoundingClientRect();
+                                           canvas.height = Math.floor(actual.height);
+                                           canvas.width = Math.floor(actual.width);});
+
   if (!gl) {
     return;
   }
@@ -103,7 +108,7 @@ function main() {
     const fieldOfViewRadians = Math.PI * .35;
     const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
     projectionMatrix =
-        m4.perspective(fieldOfViewRadians, aspect, 1, 2000);
+        m4.perspective(fieldOfViewRadians, aspect, 1, 3000);
 
     // Compute the camera's matrix using look at.
     const midY = lerp(extents.min[1], extents.max[1], .5);

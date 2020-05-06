@@ -28,13 +28,13 @@ a:hover {
 html,
 body {
     height: 100%;
-    background-color: #4e4e4e;
+    background-color: #ffffff;
 }
 
 body {
     display: -ms-flexbox;
     display: flex;
-    color: #939393;
+    color: #8d4c4c;
     /*     text-shadow: 0 .05rem .1rem rgba(0, 0, 0, .5); */
     /*     box-shadow: inset 0 0 5rem rgba(0, 0, 0, .5); */
 }
@@ -128,11 +128,13 @@ body {
 
 .main-canvas {
     border: 1px solid blue;
-    position: absolute; 
+/*     position: absolute; 
     left: 0; 
-    top: 0; 
+    top: 0;  */
+    height: auto;
+    width: 100%;
 }
 
 .under-canvas {
-    margin-top: 350px;
+/*     margin-top: 350px; */
 }

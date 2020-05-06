@@ -12,7 +12,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <meta name="description" content="">
-    <meta name="author" content="Mark Otto, Jacob Thornton, and Bootstrap contributors">
+    <meta name="author" content="Cyprien Neverov">
     <title>Surf</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
     <link href="cover.css" rel="stylesheet">
@@ -32,42 +32,13 @@
         </header>
         <main role="main" class="inner cover">
             <h1 class="cover-heading">Shape your board.</h1>
-            <div style="position: relative;">
-                <canvas class="main-canvas" id="canvas-background" style="z-index: 0;"></canvas>
-                <canvas class="main-canvas" id="canvas1" style="z-index: 1;"></canvas>
+<!--             <div style="position: relative;"> -->
+<!--                 <canvas class="main-canvas" id="canvas-background" style="z-index: 0;"style="z-index: 1;"></canvas> -->
+                <canvas class="main-canvas" id="canvas1" ></canvas>
+<!--             </div> -->
+            <div id='controls' class="under-canvas">
             </div>
-            <div class="under-canvas">
-                <div class="btn-toolbar mb-3" role="toolbar" aria-label="Toolbar with button groups">
-                    <div class="btn-group mr-2" role="group" aria-label="First group">
-                        <button type="button" class="btn btn-primary" onclick="changeAxis('x');">X</button>
-                        <button type="button" class="btn btn-primary" onclick="changeAxis('x0');">X<sub>small</sub></button>
-                        <button type="button" class="btn btn-primary" onclick="changeAxis('y');">Y</button>
-                        <button type="button" class="btn btn-primary" onclick="changeAxis('z');">Z</button>
-                    </div>
-                    <div class="input-group">
-                        <div class="input-group-prepend">
-                            <div class="input-group-text" id="btnGroupAddon">Length</div>
-                        </div>
-                        <input type="text" class="form-control" aria-label="Input group example" aria-describedby="btnGroupAddon">
-                    </div>
-                    <div class="input-group">
-                        <div class="input-group-prepend">
-                            <div class="input-group-text" id="btnGroupAddon">Width</div>
-                        </div>
-                        <input type="text" class="form-control" aria-label="Input group example" aria-describedby="btnGroupAddon">
-                    </div>
-                    <div class="input-group">
-                        <div class="input-group-prepend">
-                            <div class="input-group-text" id="btnGroupAddon">Thickness</div>
-                        </div>
-                        <input type="text" class="form-control" aria-label="Input group example" aria-describedby="btnGroupAddon">
-                    </div>
-                    <div class="btn-group mr-2" role="group" aria-label="Second group">
-                        <button type="button" class="btn btn-warning" onclick="commit();">Commit</button>
-                    </div>
-                </div>
-            </div>
-            <canvas id='3d-canvas' width="1000" height="500"></canvas>
+            <canvas class="main-canvas" id='3d-canvas'></canvas>
             <div>
                 <pre><code id="json_output"></code></pre>
             </div>
@@ -79,7 +50,14 @@
         </footer>
     </div>
 </body>
+<script src="https://unpkg.com/react@16/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@16/umd/react-dom.production.min.js" crossorigin></script>
+
 <script type="text/javascript" src="surf.js"></script>
+<script type="text/javascript" src="ui.js"></script>
+
+<script type="text/javascript" src="main.js"></script>
+
 <!-- vertex shader -->
 <script id="vertex-shader-3d" type="x-shader/x-vertex">
     attribute vec4 a_position;
