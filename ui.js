@@ -1,49 +1,96 @@
-class DimForm extends React.Component {
+class DimensionInput extends React.Component {
     constructor(props) {
         super(props);
-        this.state = {
-            value: props.value
-        };
-
         this.handleChange = this.handleChange.bind(this);
     }
 
-    handleChange(event) {
-        this.setState({
-            value: event.target.value
-        });
+    handleChange(e) {
+        this.props.onDimensionChange(e.target.value);
     }
 
     render() {
-        return (React.createElement("label", null, `${this.props.name}:`, React.createElement("input", {
-            type: "text",
-            value: this.state.value,
-            onChange: this.handleChange
-        })));
-
+        const dimension = this.props.dimension;
+        const scale = this.props.scale;
+        const name = this.props.name;
+        return (React.createElement('div', { class: 'dim-input' },
+            React.createElement("label", null, `${name} : `),
+            React.createElement("input", {
+                class: 'dim-input-field',
+                value: dimension,
+                onChange: this.handleChange
+            })));
     }
 }
 
-class DimsForm extends React.Component {
+
+class DimentionsControl extends React.Component {
     constructor(props) {
         super(props);
-        this.state = {
-            length: props.length
-        };
+        this.handleLengthChange = this.handleLengthChange.bind(this);
+        this.handleWidthChange = this.handleWidthChange.bind(this);
+        this.handleThicknessChange = this.handleThicknessChange.bind(this);
+        this.state = { length: props.length, width: props.width, thickness: props.thickness };
     }
 
-    handleChange(event) {
-        console.log(event);
-        this.setState({
-            length: event.target.length
-        });
+    toFloat(dim) {
+        if (dim === "") {
+            return 0
+        } else {
+            return parseFloat(dim)
+        }
+    }
+
+    handleWidthChange(dimension) {
+        const width = this.toFloat(dimension);
+        if (!isNaN(width)) {
+            const newState = { length: this.state.length, width: width, thickness: this.state.thickness };
+            this.setState(newState);
+            this.props.onChange(newState);
+        }
+    }
+
+    handleLengthChange(dimension) {
+        const length = this.toFloat(dimension);
+        if (!isNaN(length)) {
+            const newState = { length: length, width: this.state.width, thickness: this.state.thickness };
+            this.setState(newState);
+            this.props.onChange(newState);
+        }
+    }
+
+    handleThicknessChange(dimension) {
+        const thickness = this.toFloat(dimension);
+        if (!isNaN(thickness)) {
+            const newState = { length: this.state.length, width: this.state.width, thickness: thickness }
+            this.setState(newState);
+            this.props.onChange(newState);
+        }
     }
 
     render() {
-        return (React.createElement("div", { onChange: this.handleChange }, React.createElement(DimForm, {
-            name: 'Length',
-            value: this.state.length
-        })));
+        const length = this.state.length;
+        const width = this.state.width;
+        const thickness = this.state.thickness;
+
+        return (
+
+            React.createElement("fieldset", { class: 'dim-input' },
+                React.createElement(DimensionInput, {
+                    name: 'Length',
+                    dimension: length,
+                    onDimensionChange: this.handleLengthChange
+                }),
+                React.createElement(DimensionInput, {
+                    name: 'Width',
+                    dimension: width,
+                    onDimensionChange: this.handleWidthChange
+                }),
+                React.createElement(DimensionInput, {
+                    name: 'Thickness',
+                    dimension: thickness,
+                    onDimensionChange: this.handleThicknessChange
+                })));
+
 
     }
 }
@@ -54,7 +101,7 @@ class Point {
     children = [];
     freedom = [1, 1];
     number = null;
-    r = 5;
+    r = 6;
 
 
     constructor(x, y, freedomX, freedomY, number) {
@@ -74,7 +121,7 @@ class Point {
         return [this.x, this.y]
     }
 
-    plot(ctx) {
+    plot(ctx, selected = false) {
         if (this.number < 0) {
             ctx.fillStyle = "#A0A0A0";
         } else {
@@ -84,6 +131,13 @@ class Point {
         ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
         ctx.closePath();
         ctx.fill();
+        if (selected) {
+            ctx.strokeStyle = 'red';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.strokeStyle = 'black';
+            ctx.lineWidth = 1;
+        }
     }
 
     update(dx, dy) {
@@ -98,12 +152,13 @@ class CvsRedactor {
     padding = 40;
     axis = 'z';
     rescaling = 0;
+    currentPoint;
     startX;
     startY;
     rescaling;
     points;
 
-    constructor(board, profile='x') {
+    constructor(board, profile = 'z') {
         this.board = board
         this.profile = profile
         this.canvas = document.getElementById("canvas1");
@@ -119,11 +174,10 @@ class CvsRedactor {
         this.profile = profile
         let actual = this.canvas.getBoundingClientRect();
         this.width = Math.floor(actual.width);
-        this.height = Math.floor(this.width*0.33);
-        console.log(this.width, this.height)
-        this.canvas.height = this.height
-        this.canvas.width = this.width
-        this.padding = Math.floor(actual.height/10);
+        this.height = Math.floor(this.width * 0.33);
+        this.canvas.height = this.height;
+        this.canvas.width = this.width;
+        this.padding = Math.floor(actual.height / 10);
         this.offsetX = actual.left;
         this.offsetY = actual.top;
         this.setRescaling(profile)
@@ -131,23 +185,28 @@ class CvsRedactor {
         this.render()
     }
 
+    reconstruct(board) {
+        this.board = board;
+        this.initialize(this.profile);
+    }
+
     setRescaling(profile) {
         switch (profile) {
             case 'x':
-                this.xFactor = board.width;
-                this.yFactor = board.thickness;
+                this.xFactor = this.board.width;
+                this.yFactor = this.board.thickness;
                 break;
             case 'x0':
-                this.xFactor = board.x0Wwidth();
-                this.yFactor = board.x0Thickness();
+                this.xFactor = this.board.x0Wwidth();
+                this.yFactor = this.board.x0Thickness();
                 break;
             case 'y':
-                this.xFactor = board.length;
-                this.yFactor = board.thickness;
+                this.xFactor = this.board.length;
+                this.yFactor = this.board.thickness;
                 break;
             case 'z':
-                this.xFactor = board.length;
-                this.yFactor = board.width;
+                this.xFactor = this.board.length;
+                this.yFactor = this.board.width;
                 break;
             default:
                 throw new Error('Profile not understood');
@@ -156,13 +215,13 @@ class CvsRedactor {
         this.rescaling = 0.9 / this.rescaling
 
     }
-    
+
     getPoints(profile) {
-    var pointsArray = this.board[profile].points.map((p) => p.fullDest);
-    return pointsArray.map((p, i) => {
-        var j = p.slice();
-        [j[0], j[1]] = this.to([j[0], j[1]]);
-        return new Point(...j);
+        var pointsArray = this.board[profile].points.map((p) => p.fullDest);
+        return pointsArray.map((p, i) => {
+            var j = p.slice();
+            [j[0], j[1]] = this.to([j[0], j[1]]);
+            return new Point(...j);
         })
     }
 
@@ -176,9 +235,20 @@ class CvsRedactor {
         return [x, y]
     }
 
+    from([x, y]) {
+        y -= this.height - this.this.padding
+        y /= -this.rescaling
+        y /= this.yFactor
+        x -= this.padding
+        x /= this.rescaling
+        x /= this.xFactor
+        return [x, y]
+    }
+
     drawProfile() {
         this.ctx.lineWidth = 2;
         this.ctx.fillStyle = "rgba(45, 252, 194, 0.3)";
+        this.ctx.strokeStyle = 'black';
         this.ctx.beginPath()
         this.ctx.moveTo(...this.points[0].pair);
         for (var i = 1; i < this.points.length; i += 3) {
@@ -207,6 +277,7 @@ class CvsRedactor {
 
     drawPoints() {
         this.ctx.lineWidth = 1;
+        this.ctx.strokeStyle = 'black';
         for (var i = 0; i < this.points.length; i++) {
             if (this.points[i].number == -1) {
                 this.ctx.beginPath();
@@ -219,12 +290,12 @@ class CvsRedactor {
                 this.ctx.lineTo(...this.points[i].pair);
                 this.ctx.stroke();
             }
-            this.points[i].plot(this.ctx)
+            this.points[i].plot(this.ctx, (i == this.currentPoint))
         }
     }
 
     onDown(e) {
-        
+
         let actual = this.canvas.getBoundingClientRect();
         this.offsetX = actual.left;
         this.offsetY = actual.top;
@@ -242,19 +313,25 @@ class CvsRedactor {
             var dy = p.y - my;
             if (dx * dx + dy * dy < p.r * p.r) {
                 this.dragok = true;
+                this.currentPoint = i;
                 p.isDragging = true;
                 if (p.number > 0) {
                     this.points[(i - 1 > 0) ? i - 1 : i].isDragging = true;
                     this.points[(i + 1 < this.points.length) ? i + 1 : i].isDragging = true;
                 }
+                break;
             }
+        }
+        if (!this.dragok) {
+            this.currentPoint = -1;
         }
         this.startX = mx;
         this.startY = my;
+        this.render();
     }
 
     onUp(e) {
-       e.preventDefault();
+        e.preventDefault();
         e.stopPropagation();
 
         this.dragok = false;
@@ -264,7 +341,6 @@ class CvsRedactor {
     }
 
     onMove(e) {
-        // if we're dragging anything.
         var mx = parseInt(e.clientX - this.offsetX);
         var my = parseInt(e.clientY - this.offsetY);
         if (this.dragok) {
@@ -299,15 +375,6 @@ class CvsRedactor {
 //     output.innerHTML = JSON.stringify(board);
 // }
 
-// function changeAxis(name) {
-//     if (name == 'x0') {
-//         axis = 'x';
-//     } else {
-//         axis = name;
-//     }
-//     initialize(axis, name);
-// }
-
 
 // function pointsToBoard(points) {
 //     var result = [];
@@ -317,50 +384,6 @@ class CvsRedactor {
 //     return result
 // }
 
-// function get2D(axis, point) {
-//     var [x, y, z] = point
-//     if (axis == 'x') {
-//         return [y, z]
-//     } else if (axis == 'y') {
-//         return [x, z]
-//     } else if (axis == 'z') {
-//         return [x, y]
-//     }
-// }
-
-
-
 // function round(value, precision = 100) {
 //     return Math.round(value * precision) / precision
 // }
-
-// function to([x, y]) {
-//     if (axis !== null) {
-//         y *= y_factor
-//         y *= -rescaling
-//         y += HEIGHT - padding
-//         x *= x_factor
-//         x *= rescaling
-//         x += padding
-//         return [x, y]
-//     } else {
-//         throw "axis not initialized";
-//     }
-// }
-
-// function from([x, y]) {
-//     if (axis !== null) {
-//         y -= HEIGHT - padding
-//         y /= -rescaling
-//         y /= y_factor
-//         x -= padding
-//         x /= rescaling
-//         x /= x_factor
-//         return [x, y]
-//     } else {
-//         throw "axis not initialized";
-//     }
-// }
-
-
-

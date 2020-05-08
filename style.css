@@ -28,15 +28,15 @@ a:hover {
 html,
 body {
     height: 100%;
-    background-color: #fff1f1;
+    background-color: #ffffff;
 }
 
 body {
     display: -ms-flexbox;
     display: flex;
-    color: #000;
-/*     text-shadow: 0 .05rem .1rem rgba(0, 0, 0, .5); */
-/*     box-shadow: inset 0 0 5rem rgba(0, 0, 0, .5); */
+    /* color: #8d4c4c; */
+    /* text-shadow: 0 .05rem .1rem rgba(0, 0, 0, .5); */
+    /*     box-shadow: inset 0 0 5rem rgba(0, 0, 0, .5); */
 }
 
 .cover-container {
@@ -128,13 +128,24 @@ body {
 
 .main-canvas {
     border: 1px solid blue;
-    position: absolute; 
+/*     position: absolute; 
     left: 0; 
-    top: 0; 
-    /*height: 100%;
-    width: 100%;*/
+    top: 0;  */
+    height: auto;
+    width: 100%;
 }
 
 .under-canvas {
-    margin-top: 350px;
+    margin-bottom: rem;
+}
+
+.dim-input {
+    float: left;
+    margin-left:.2rem;
+    margin-right:.2rem;
+}
+
+.dim-input-field {
+    margin-left:.2rem;
+    width: 3rem;
 }

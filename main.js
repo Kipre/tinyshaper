@@ -4,4 +4,9 @@ var rBoard = new Board(board);
 
 var disp = new CvsRedactor(rBoard);
 
-ReactDOM.render(React.createElement(DimsForm, {length: 40}), document.getElementById('controls'));
+ReactDOM.render(React.createElement(DimentionsControl, {width: rBoard.width,
+                                                        length: rBoard.length,
+                                                        thickness: rBoard.thickness,
+                                                        onChange: (state) => {rBoard = {...rBoard, ...state};
+                                                                              disp.reconstruct(rBoard);}}),
+   document.getElementById('controls'));

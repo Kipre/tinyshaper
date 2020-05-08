@@ -105,7 +105,7 @@ function main() {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
     // Compute the projection matrix
-    const fieldOfViewRadians = Math.PI * .35;
+    const fieldOfViewRadians = Math.PI * .2;
     const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
     projectionMatrix =
         m4.perspective(fieldOfViewRadians, aspect, 1, 3000);
