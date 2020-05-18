@@ -9,143 +9,102 @@ class DimensionInput extends React.Component {
     }
 
     render() {
-        const dimension = this.props.dimension;
-        const scale = this.props.scale;
-        const name = this.props.name;
-        return (React.createElement('div', { class: 'dim-input' },
-            React.createElement("label", null, `${name} : `),
-            React.createElement("input", {
-                class: 'dim-input-field',
-                value: dimension,
-                onChange: this.handleChange
-            })));
+        return (<div class='dim-input'>
+                    <label>{this.props.name} : </label>
+                    <input class='dim-input-field' 
+                           value={this.props.dimension} 
+                           disabled={this.props.disabled} 
+                           onChange={this.handleChange}></input>
+                </div>)
     }
 }
 
+function ToggleSwitch(props) {
+    return (
+        <div class='tog-switch'>
+            <label>{props.name}</label>
+            <input type='checkbox' onClick={props.onChange} checked={props.checked} disabled={props.disabled}/>
+        </div>
+    );
+}
 
-class DimentionsControl extends React.Component {
+class Controls extends React.Component {
     constructor(props) {
         super(props);
-        this.handleLengthChange = this.handleLengthChange.bind(this);
-        this.handleWidthChange = this.handleWidthChange.bind(this);
-        this.handleThicknessChange = this.handleThicknessChange.bind(this);
-        this.state = { length: props.length, width: props.width, thickness: props.thickness };
+        this.handleChange = this.handleChange.bind(this);
+        this.state = {
+            length: props.length,
+            width: props.width,
+            thickness: props.thickness,
+            continuity: props.continuity
+        };
     }
 
-    toFloat(dim) {
-        if (dim === "") {
-            return 0
+    toFloat(dim, p) {
+        var result = parseFloat(dim)
+        if (isNaN(result)) {
+            return this.props[p]
         } else {
-            return parseFloat(dim)
+            return result
         }
     }
 
-    handleWidthChange(dimension) {
-        const width = this.toFloat(dimension);
-        if (!isNaN(width)) {
-            const newState = { length: this.state.length, width: width, thickness: this.state.thickness };
-            this.setState(newState);
-            this.props.onChange(newState);
+    commit() {
+        var vals = { ...this.state,
+            width: this.toFloat(this.state.width, 'width'),
+            length: this.toFloat(this.state.length, 'length'),
+            thickness: this.toFloat(this.state.thickness, 'thickness')
         }
+        this.setState(vals)
+        this.props.onCommit(vals)
     }
 
-    handleLengthChange(dimension) {
-        const length = this.toFloat(dimension);
-        if (!isNaN(length)) {
-            const newState = { length: length, width: this.state.width, thickness: this.state.thickness };
-            this.setState(newState);
-            this.props.onChange(newState);
-        }
+
+
+    handleContinuityChange(e) {
+        this.setState({ ...this.state, continuity: !this.state.continuity })
     }
 
-    handleThicknessChange(dimension) {
-        const thickness = this.toFloat(dimension);
-        if (!isNaN(thickness)) {
-            const newState = { length: this.state.length, width: this.state.width, thickness: thickness }
-            this.setState(newState);
-            this.props.onChange(newState);
-        }
+    handleChange(dimension, what) {
+        var newState = this.state
+        newState[what] = dimension
+        this.setState(newState);
     }
 
     render() {
-        const length = this.state.length;
-        const width = this.state.width;
-        const thickness = this.state.thickness;
-
         return (
-
-            React.createElement("fieldset", { class: 'dim-input' },
-                React.createElement(DimensionInput, {
-                    name: 'Length',
-                    dimension: length,
-                    onDimensionChange: this.handleLengthChange
-                }),
-                React.createElement(DimensionInput, {
-                    name: 'Width',
-                    dimension: width,
-                    onDimensionChange: this.handleWidthChange
-                }),
-                React.createElement(DimensionInput, {
-                    name: 'Thickness',
-                    dimension: thickness,
-                    onDimensionChange: this.handleThicknessChange
-                })));
-
-
+            <div class='controls'>
+                <fieldset class='dim-input'>
+                    <DimensionInput  name='Length'
+                                     dimension={this.state.length}
+                                     onDimensionChange={(dim) => { this.handleChange(dim, 'length') }}/>
+                    <DimensionInput  name='Width'
+                                     dimension={this.state.width}
+                                     onDimensionChange={(dim) => { this.handleChange(dim, 'width') }}/>
+                    <DimensionInput  name='Thickness'
+                                     dimension={this.state.thickness}
+                                     onDimensionChange={(dim) => { this.handleChange(dim, 'thickness') }}/>
+                </fieldset>
+                <div class='point-controls'>
+                    <label>Point</label>
+                    <DimensionInput  name='X'
+                                     dimension={this.state.x}
+                                     onDimensionChange={(dim) => { this.handleChange(dim, 'x') }}
+                                     disabled={!this.state.pointSelected}/>
+                    <DimensionInput  name='Y'
+                                     dimension={this.state.y}
+                                     onDimensionChange={(dim) => { this.handleChange(dim, 'y') }}
+                                     disabled={!this.state.pointSelected}/>
+                    <ToggleSwitch name='Continuity' 
+                                  onChange={(e)  => {this.handleContinuityChange(e)}} 
+                                  checked={this.state.continuity}
+                                  disabled={this.state.pointSelected == 2}/>
+                </div>
+                <button class='commit-btn' onClick={(e) => {this.commit(e)}}>Commit</button>
+            </div>
+        );
     }
 }
-
-
-class Point {
-    isDragging = false;
-    children = [];
-    freedom = [1, 1];
-    number = null;
-    r = 6;
-
-
-    constructor(x, y, freedomX, freedomY, number) {
-        this.x = x;
-        this.y = y;
-        //         this.rang = rang
-        this.freedom = [freedomX, freedomY]
-        this.number = number
-    }
-
-    dest() {
-        var out = from([this.x, this.y]);
-        return [...out, ...this.freedom, this.number]
-    }
-
-    get pair() {
-        return [this.x, this.y]
-    }
-
-    plot(ctx, selected = false) {
-        if (this.number < 0) {
-            ctx.fillStyle = "#A0A0A0";
-        } else {
-            ctx.fillStyle = "#444444";
-        }
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
-        ctx.closePath();
-        ctx.fill();
-        if (selected) {
-            ctx.strokeStyle = 'red';
-            ctx.lineWidth = 2;
-            ctx.stroke();
-            ctx.strokeStyle = 'black';
-            ctx.lineWidth = 1;
-        }
-    }
-
-    update(dx, dy) {
-        this.x += dx * this.freedom[0]
-        this.y += dy * this.freedom[1]
-    }
-}
-
 
 class CvsRedactor {
     dragok = false;
@@ -182,12 +141,55 @@ class CvsRedactor {
         this.offsetY = actual.top;
         this.setRescaling(profile)
         this.points = this.getPoints(profile);
-        this.render()
+        this.render();
+        this.renderControls();
     }
+
+
 
     reconstruct(board) {
         this.board = board;
         this.initialize(this.profile);
+    }
+
+
+
+    onCommit(state) {
+        var newBoard = { ...this.board };
+        newBoard.width = state.width;
+        newBoard.length = state.length;
+        newBoard.thickness = state.thickness;
+        if (this.currentPoint) {
+            this.points[this.currentPoint].continuity = state.continuity;
+        }
+        this.board = newBoard;
+        this.initialize(this.profile);
+    }
+
+    setPointControls(i) {
+        this.currentPoint = i;
+        if (i == -1) {
+            this.controls.setState({...this.controls.state, pointSelected: false});
+        } else {
+        const [x, y] = this.from(this.points[i].pair);
+        this.controls.setState({...this.controls.state, 
+                                x: x, 
+                                y: y, 
+                                continuity: this.points[i].continuity,
+                                pointSelected: true});
+        }
+    }
+
+    renderControls() {
+        this.controls = ReactDOM.render(
+            <Controls width={rBoard.width.toString()} 
+                      length={rBoard.length.toString()} 
+                      thickness={rBoard.thickness.toString()}
+                      pointSelected={false}
+                      continuity={true}
+                      onCommit={(state) => {this.onCommit(state)}}/>,
+            document.getElementById('controls')
+        );
     }
 
     setRescaling(profile) {
@@ -236,7 +238,7 @@ class CvsRedactor {
     }
 
     from([x, y]) {
-        y -= this.height - this.this.padding
+        y -= this.height - this.padding
         y /= -this.rescaling
         y /= this.yFactor
         x -= this.padding
@@ -313,7 +315,7 @@ class CvsRedactor {
             var dy = p.y - my;
             if (dx * dx + dy * dy < p.r * p.r) {
                 this.dragok = true;
-                this.currentPoint = i;
+                this.setPointControls(i);
                 p.isDragging = true;
                 if (p.number > 0) {
                     this.points[(i - 1 > 0) ? i - 1 : i].isDragging = true;
@@ -323,7 +325,7 @@ class CvsRedactor {
             }
         }
         if (!this.dragok) {
-            this.currentPoint = -1;
+            this.setPointControls(-1);
         }
         this.startX = mx;
         this.startY = my;
@@ -355,6 +357,7 @@ class CvsRedactor {
                 var p = this.points[i];
                 if (p.isDragging) {
                     p.update(dx, dy)
+                    this.setPointControls(i)
                 }
             }
 
@@ -387,3 +390,55 @@ class CvsRedactor {
 // function round(value, precision = 100) {
 //     return Math.round(value * precision) / precision
 // }
+
+
+
+class Point {
+    isDragging = false;
+    children = [];
+    freedom = [1, 1];
+    number = null;
+    continuity = false;
+    r = 6;
+
+
+    constructor(x, y, freedomX, freedomY, number) {
+        this.x = x;
+        this.y = y;
+        this.freedom = [freedomX, freedomY]
+        this.number = number
+    }
+
+    dest() {
+        var out = from([this.x, this.y]);
+        return [...out, ...this.freedom, this.number]
+    }
+
+    get pair() {
+        return [this.x, this.y]
+    }
+
+    plot(ctx, selected = false) {
+        if (this.number < 0) {
+            ctx.fillStyle = "#A0A0A0";
+        } else {
+            ctx.fillStyle = "#444444";
+        }
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.fill();
+        if (selected) {
+            ctx.strokeStyle = 'red';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.strokeStyle = 'black';
+            ctx.lineWidth = 1;
+        }
+    }
+
+    update(dx, dy) {
+        this.x += dx * this.freedom[0]
+        this.y += dy * this.freedom[1]
+    }
+}

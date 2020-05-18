@@ -1,0 +1,6 @@
+{
+  "targets": {
+    "chrome": "80",
+    "firefox": "70"
+  }
+}
