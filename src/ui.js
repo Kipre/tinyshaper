@@ -1,22 +1,15 @@
-class DimensionInput extends React.Component {
-    constructor(props) {
-        super(props);
-        this.handleChange = this.handleChange.bind(this);
-    }
+function round(value, precision=100) {
+    return Math.round(value * precision) / precision
+}
 
-    handleChange(e) {
-        this.props.onDimensionChange(e.target.value);
-    }
-
-    render() {
-        return (<div class='dim-input'>
-                    <label>{this.props.name} : </label>
+function DimensionInput(props) {
+    return (<div class='dim-input'>
+                    <label>{props.name} : </label>
                     <input class='dim-input-field' 
-                           value={this.props.dimension} 
-                           disabled={this.props.disabled} 
-                           onChange={this.handleChange}></input>
+                           value={props.dimension} 
+                           disabled={props.disabled} 
+                           onChange={(e) => {props.onDimensionChange(e.target.value);}}></input>
                 </div>)
-    }
 }
 
 function ToggleSwitch(props) {
@@ -59,8 +52,6 @@ class Controls extends React.Component {
         this.props.onCommit(vals)
     }
 
-
-
     handleContinuityChange(e) {
         this.setState({ ...this.state, continuity: !this.state.continuity })
     }
@@ -98,9 +89,13 @@ class Controls extends React.Component {
                     <ToggleSwitch name='Continuity' 
                                   onChange={(e)  => {this.handleContinuityChange(e)}} 
                                   checked={this.state.continuity}
-                                  disabled={this.state.pointSelected == 2}/>
+                                  disabled={this.state.pointSelected != 2}/>
                 </div>
-                <button class='commit-btn' onClick={(e) => {this.commit(e)}}>Commit</button>
+                <button class='commit-btn' onClick={() => {this.commit()}}>Commit</button>
+                <button class='commit-btn' onClick={() => {this.props.setProfile('z')}}>Top</button>
+                <button class='commit-btn' onClick={() => {this.props.setProfile('y')}}>Side</button>
+                <button class='commit-btn' onClick={() => {this.props.setProfile('x')}}>Section</button>
+                <button class='commit-btn' onClick={() => {this.props.setProfile('x0')}}>Rear Section</button>
             </div>
         );
     }
@@ -169,14 +164,18 @@ class CvsRedactor {
     setPointControls(i) {
         this.currentPoint = i;
         if (i == -1) {
-            this.controls.setState({...this.controls.state, pointSelected: false});
+            this.controls.setState({...this.controls.state, 
+                                    x: '', 
+                                    y: '', 
+                                    continuity: false,
+                                    pointSelected: false});
         } else {
-        const [x, y] = this.from(this.points[i].pair);
-        this.controls.setState({...this.controls.state, 
-                                x: x, 
-                                y: y, 
-                                continuity: this.points[i].continuity,
-                                pointSelected: true});
+            const [x, y] = this.from(this.points[i].pair);this.points[i].hasContinuity 
+            this.controls.setState({...this.controls.state, 
+                                    x: round(x), 
+                                    y: round(y), 
+                                    continuity: this.points[i].continuity,
+                                    pointSelected: this.points[i].hasContinuity});
         }
     }
 
@@ -187,7 +186,8 @@ class CvsRedactor {
                       thickness={rBoard.thickness.toString()}
                       pointSelected={false}
                       continuity={true}
-                      onCommit={(state) => {this.onCommit(state)}}/>,
+                      onCommit={(state) => {this.onCommit(state)}}
+                      setProfile={(profile) => {this.initialize(profile)}}/>,
             document.getElementById('controls')
         );
     }
@@ -199,7 +199,7 @@ class CvsRedactor {
                 this.yFactor = this.board.thickness;
                 break;
             case 'x0':
-                this.xFactor = this.board.x0Wwidth();
+                this.xFactor = this.board.x0Width();
                 this.yFactor = this.board.x0Thickness();
                 break;
             case 'y':
@@ -371,28 +371,6 @@ class CvsRedactor {
 
 }
 
-// function commit() {
-//     var arr = pointsToBoard(points);
-//     board[name] = arr;
-//     var output = document.getElementById("json_output");
-//     output.innerHTML = JSON.stringify(board);
-// }
-
-
-// function pointsToBoard(points) {
-//     var result = [];
-//     for (var i = 0; i < points.length; i++) {
-//         result.push(points[i].dest())
-//     }
-//     return result
-// }
-
-// function round(value, precision = 100) {
-//     return Math.round(value * precision) / precision
-// }
-
-
-
 class Point {
     isDragging = false;
     children = [];
@@ -416,6 +394,10 @@ class Point {
 
     get pair() {
         return [this.x, this.y]
+    }
+
+    get hasContinuity() {
+        return 2;
     }
 
     plot(ctx, selected = false) {
