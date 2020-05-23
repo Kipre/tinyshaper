@@ -47,13 +47,14 @@ class Controls extends React.Component {
             width: this.toFloat(this.state.width, 'width'),
             length: this.toFloat(this.state.length, 'length'),
             thickness: this.toFloat(this.state.thickness, 'thickness')
-        }
-        this.setState(vals)
-        this.props.onCommit(vals)
+        };
+        this.setState(vals);
+        this.props.onCommit(vals);
     }
 
     handleContinuityChange(e) {
-        this.setState({ ...this.state, continuity: !this.state.continuity })
+        this.props.onContinuity();
+        this.setState({ ...this.state, continuity: !this.state.continuity });
     }
 
     handleChange(dimension, what) {
@@ -89,7 +90,7 @@ class Controls extends React.Component {
                     <ToggleSwitch name='Continuity' 
                                   onChange={(e)  => {this.handleContinuityChange(e)}} 
                                   checked={this.state.continuity}
-                                  disabled={this.state.pointSelected != 2}/>
+                                  disabled={!this.state.pointSelected}/>
                 </div>
                 <button class='commit-btn' onClick={() => {this.commit()}}>Commit</button>
                 <button class='commit-btn' onClick={() => {this.props.setProfile('z')}}>Top</button>
@@ -102,14 +103,13 @@ class Controls extends React.Component {
 }
 
 class CvsRedactor {
-    dragok = false;
+    isDragging = false;
     padding = 40;
     axis = 'z';
     rescaling = 0;
     currentPoint;
     startX;
     startY;
-    rescaling;
     points;
 
     constructor(board, profile = 'z') {
@@ -170,12 +170,12 @@ class CvsRedactor {
                                     continuity: false,
                                     pointSelected: false});
         } else {
-            const [x, y] = this.from(this.points[i].pair);this.points[i].hasContinuity 
+            const [x, y] = this.from(this.points[i].pair);
             this.controls.setState({...this.controls.state, 
                                     x: round(x), 
                                     y: round(y), 
-                                    continuity: this.points[i].continuity,
-                                    pointSelected: this.points[i].hasContinuity});
+                                    continuity: (this.points[i] instanceof ChildPoint) ? this.points[i].parent.continuity : this.points[i].continuity,
+                                    pointSelected: true});
         }
     }
 
@@ -185,7 +185,14 @@ class CvsRedactor {
                       length={rBoard.length.toString()} 
                       thickness={rBoard.thickness.toString()}
                       pointSelected={false}
-                      continuity={true}
+                      continuity={false}
+                      onContinuity={() => {
+                        if (this.points[this.currentPoint].parent) {
+                            this.points[this.currentPoint].parent.continuity ^= true;
+                        } else {
+                            this.points[this.currentPoint].continuity ^= true;
+                        }
+                      }}
                       onCommit={(state) => {this.onCommit(state)}}
                       setProfile={(profile) => {this.initialize(profile)}}/>,
             document.getElementById('controls')
@@ -219,12 +226,32 @@ class CvsRedactor {
     }
 
     getPoints(profile) {
-        var pointsArray = this.board[profile].points.map((p) => p.fullDest);
-        return pointsArray.map((p, i) => {
+        var pointsArray = this.board.board[profile];
+        pointsArray = pointsArray.map((p, i) => {
             var j = p.slice();
             [j[0], j[1]] = this.to([j[0], j[1]]);
-            return new Point(...j);
+            if (j[4] >= 0) {
+                return new ParentPoint(...j);
+            } else {
+                return new ChildPoint(...j)
+            }
+            
         })
+        for (var i=0; i<pointsArray.length; i++) {
+            if (pointsArray[(i-1 >= 0) ? i-1 : 0].number == -2) {
+                pointsArray[i].before = pointsArray[i-1];
+                pointsArray[i].before.parent = pointsArray[i];
+            }
+            if (pointsArray[(i+1 < pointsArray.length) ? i+1 : i-1].number == -1) {
+                pointsArray[i].after = pointsArray[i+1];
+                pointsArray[i].after.parent = pointsArray[i];
+            }
+            if (pointsArray[i].before && pointsArray[i].after) {
+                pointsArray[i].before.sibling = pointsArray[i].after
+                pointsArray[i].after.sibling = pointsArray[i].before
+            }
+        }
+        return pointsArray;
     }
 
     to([x, y]) {
@@ -255,7 +282,7 @@ class CvsRedactor {
         this.ctx.moveTo(...this.points[0].pair);
         for (var i = 1; i < this.points.length; i += 3) {
             if (this.points[i].number > 0) {
-                this.ctx.lineTo(...points[i].pair);
+                this.ctx.lineTo(...this.points[i].pair);
                 i -= 2
             } else {
                 this.ctx.bezierCurveTo(...this.points[i].pair, ...this.points[i + 1].pair, ...this.points[i + 2].pair);
@@ -308,23 +335,19 @@ class CvsRedactor {
         var mx = parseInt(e.clientX - this.offsetX);
         var my = parseInt(e.clientY - this.offsetY);
 
-        this.dragok = false;
+        this.isDragging = false;
         for (var i = 0; i < this.points.length; i++) {
             var p = this.points[i];
             var dx = p.x - mx;
             var dy = p.y - my;
             if (dx * dx + dy * dy < p.r * p.r) {
-                this.dragok = true;
+                this.isDragging = true;
                 this.setPointControls(i);
                 p.isDragging = true;
-                if (p.number > 0) {
-                    this.points[(i - 1 > 0) ? i - 1 : i].isDragging = true;
-                    this.points[(i + 1 < this.points.length) ? i + 1 : i].isDragging = true;
-                }
                 break;
             }
         }
-        if (!this.dragok) {
+        if (!this.isDragging) {
             this.setPointControls(-1);
         }
         this.startX = mx;
@@ -336,7 +359,7 @@ class CvsRedactor {
         e.preventDefault();
         e.stopPropagation();
 
-        this.dragok = false;
+        this.isDragging = false;
         for (var i = 0; i < this.points.length; i++) {
             this.points[i].isDragging = false;
         }
@@ -345,7 +368,7 @@ class CvsRedactor {
     onMove(e) {
         var mx = parseInt(e.clientX - this.offsetX);
         var my = parseInt(e.clientY - this.offsetY);
-        if (this.dragok) {
+        if (this.isDragging) {
 
             e.preventDefault();
             e.stopPropagation();
@@ -373,10 +396,8 @@ class CvsRedactor {
 
 class Point {
     isDragging = false;
-    children = [];
     freedom = [1, 1];
     number = null;
-    continuity = false;
     r = 6;
 
 
@@ -420,7 +441,55 @@ class Point {
     }
 
     update(dx, dy) {
-        this.x += dx * this.freedom[0]
-        this.y += dy * this.freedom[1]
+        dx = dx * this.freedom[0]
+        dy = dy * this.freedom[1]
+        this.x += dx
+        this.y += dy
+    }
+}
+class ParentPoint extends Point {
+
+    continuity = false;
+    before = null;
+    after = null;
+
+
+    update(dx, dy) {
+        dx = dx * this.freedom[0]
+        dy = dy * this.freedom[1]
+        if (this.before) {
+            this.before.update(dx, dy, false)
+        }
+        if (this.after) {
+            this.after.update(dx, dy, false)
+        }
+        this.x += dx
+        this.y += dy
+    }
+}
+
+class ChildPoint extends Point {
+    parent = null;
+    sibling = null;
+
+    move(alpha) {
+        const [rX, rY] = [this.x - this.parent.x, this.y - this.parent.y]
+        const norm = Math.sqrt(rX*rX + rY*rY)
+        this.x = norm * Math.cos(alpha) + this.parent.x
+        this.y = norm * Math.sin(alpha) + this.parent.y
+    }
+
+
+    update(dx, dy, propagate=true) {
+        dx = dx * this.freedom[0]
+        dy = dy * this.freedom[1]
+        if (this.parent.continuity && this.sibling && propagate) {
+            const [rX, rY] = [this.x - this.parent.x, this.y - this.parent.y]
+            const [nX, nY] = [rX + dx, rY + dy]
+            const alpha = Math.atan(nY/nX)
+            this.sibling.move(alpha + (nX > 0)*Math.PI)
+        }
+        this.x += dx
+        this.y += dy
     }
 }

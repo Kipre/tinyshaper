@@ -127,8 +127,8 @@ body {
 }
 
 .main-canvas {
-    border: 1px solid blue;
-/*     position: absolute; 
+    /* border: 1px solid blue; */
+    /*     position: absolute; 
     left: 0; 
     top: 0;  */
     height: auto;
