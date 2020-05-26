@@ -127,7 +127,7 @@ body {
 }
 
 .main-canvas {
-    /* border: 1px solid blue; */
+    border: 1px solid blue;
     /*     position: absolute; 
     left: 0; 
     top: 0;  */
@@ -136,16 +136,36 @@ body {
 }
 
 .under-canvas {
-    margin-bottom: rem;
 }
 
-.dim-input {
-    float: left;
-    margin-left:.2rem;
-    margin-right:.2rem;
+.controls {
+    display: flex;
 }
 
 .dim-input-field {
     margin-left:.2rem;
     width: 3rem;
+}
+
+.control-group {
+    padding: 1em;
+    border: 1px solid;
+    border-radius: 1em;
+    margin: 1em;
+}
+
+.dim-input.control-group {
+    background-color: #ffdadd;
+}
+
+.point-controls.control-group {
+    background-color: #d2eaff;
+}
+
+.profile-controls.control-group {
+    background-color: blanchedalmond;
+}
+
+.save-controls.control-group {
+    background-color: #cbfc9b;
 }

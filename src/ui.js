@@ -66,7 +66,9 @@ class Controls extends React.Component {
     render() {
         return (
             <div class='controls'>
-                <fieldset class='dim-input'>
+                <div class='dim-input control-group'>
+                    <label>Dimensions</label>
+                <fieldset>
                     <DimensionInput  name='Length'
                                      dimension={this.state.length}
                                      onDimensionChange={(dim) => { this.handleChange(dim, 'length') }}/>
@@ -77,7 +79,8 @@ class Controls extends React.Component {
                                      dimension={this.state.thickness}
                                      onDimensionChange={(dim) => { this.handleChange(dim, 'thickness') }}/>
                 </fieldset>
-                <div class='point-controls'>
+                </div>
+                <div class='point-controls control-group'>
                     <label>Point</label>
                     <DimensionInput  name='X'
                                      dimension={this.state.x}
@@ -92,11 +95,16 @@ class Controls extends React.Component {
                                   checked={this.state.continuity}
                                   disabled={!this.state.pointSelected}/>
                 </div>
-                <button class='commit-btn' onClick={() => {this.commit()}}>Commit</button>
-                <button class='commit-btn' onClick={() => {this.props.setProfile('z')}}>Top</button>
-                <button class='commit-btn' onClick={() => {this.props.setProfile('y')}}>Side</button>
-                <button class='commit-btn' onClick={() => {this.props.setProfile('x')}}>Section</button>
-                <button class='commit-btn' onClick={() => {this.props.setProfile('x0')}}>Rear Section</button>
+                <div class='profile-controls control-group'>
+                    <button class='commit-btn' onClick={() => {this.props.setProfile('z')}}>Top</button>
+                    <button class='commit-btn' onClick={() => {this.props.setProfile('y')}}>Side</button>
+                    <button class='commit-btn' onClick={() => {this.props.setProfile('x')}}>Section</button>
+                    <button class='commit-btn' onClick={() => {this.props.setProfile('x0')}}>Rear Section</button>
+                </div>
+                <div class='save-controls control-group'>
+                    <button class='commit-btn' onClick={() => {this.commit()}}>Commit</button>
+                    <button class='commit-btn' onClick={this.props.onSave}>Save</button>
+                </div>
             </div>
         );
     }
@@ -112,9 +120,11 @@ class CvsRedactor {
     startY;
     points;
 
-    constructor(board, profile = 'z') {
-        this.board = board
-        this.profile = profile
+    constructor(board, onBoardChange, onSave, profile='z') {
+        this.onSave = onSave
+        this.onBoardChange = onBoardChange;
+        this.board = board;
+        this.profile = profile;
         this.canvas = document.getElementById("canvas1");
         this.ctx = this.canvas.getContext("2d");
         this.canvas.onmousedown = (e) => this.onDown(e);
@@ -140,25 +150,15 @@ class CvsRedactor {
         this.renderControls();
     }
 
-
-
-    reconstruct(board) {
-        this.board = board;
-        this.initialize(this.profile);
-    }
-
-
-
     onCommit(state) {
-        var newBoard = { ...this.board };
+        var newBoard = { ...this.board.board };
         newBoard.width = state.width;
         newBoard.length = state.length;
         newBoard.thickness = state.thickness;
-        if (this.currentPoint) {
-            this.points[this.currentPoint].continuity = state.continuity;
-        }
-        this.board = newBoard;
+        newBoard[this.profile] = this.returnPoints()
+        this.board.initialize(newBoard);
         this.initialize(this.profile);
+        this.onBoardChange();
     }
 
     setPointControls(i) {
@@ -189,11 +189,13 @@ class CvsRedactor {
                       onContinuity={() => {
                         if (this.points[this.currentPoint].parent) {
                             this.points[this.currentPoint].parent.continuity ^= true;
+                            this.points[this.currentPoint].update(0, 0);
                         } else {
                             this.points[this.currentPoint].continuity ^= true;
                         }
                       }}
-                      onCommit={(state) => {this.onCommit(state)}}
+                      onCommit={(state) => {this.onCommit(state);}}
+                      onSave={() => {this.onSave(this.board.nonNested());}}
                       setProfile={(profile) => {this.initialize(profile)}}/>,
             document.getElementById('controls')
         );
@@ -252,6 +254,14 @@ class CvsRedactor {
             }
         }
         return pointsArray;
+    }
+
+    returnPoints() {
+        return this.points.map((p, i) => {
+            var j = p.dest;
+            [j[0], j[1]] = this.from([j[0], j[1]]);
+            return j
+        })
     }
 
     to([x, y]) {
@@ -408,9 +418,8 @@ class Point {
         this.number = number
     }
 
-    dest() {
-        var out = from([this.x, this.y]);
-        return [...out, ...this.freedom, this.number]
+    get dest() {
+        return [this.x, this.y, ...this.freedom, this.number]
     }
 
     get pair() {
@@ -487,7 +496,7 @@ class ChildPoint extends Point {
             const [rX, rY] = [this.x - this.parent.x, this.y - this.parent.y]
             const [nX, nY] = [rX + dx, rY + dy]
             const alpha = Math.atan(nY/nX)
-            this.sibling.move(alpha + (nX > 0)*Math.PI)
+            this.sibling.move(alpha + (nX >= 0)*Math.PI)
         }
         this.x += dx
         this.y += dy

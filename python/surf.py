@@ -6,6 +6,10 @@ class BezierCurve:
     
     def __init__(self, points):
         [self.a, self.b, self.c, self.d] = points
+
+    def bounds(self, axis):
+        values = self.points()[:, axis]
+        return min(values), max(values)
         
     def evaluate(self, t):
         inv = (1 - t)
@@ -23,19 +27,24 @@ class BezierCurve:
     def points(self):
         return np.array([self.a, self.b, self.c, self.d])
     
-    def get_t(self, x, precision=0.001, axis=0):
+    def get_t(self, x, axis=0):
         l, h = 0, 1
         el = self.evaluate(l)[axis] - x
-        while abs(l - h) > precision:
-            m = (l + h)/2
-            em = self.evaluate(m)[axis] - x
-            if el * em > 0:
-                l = m
-                el = em 
-            else:
-                h = m
-                eh = em
-        return m
+        eh = self.evaluate(h)[axis] - x
+
+        if el * eh > 0:
+            return np.nan
+        else:
+            while abs(l - h) > 0.001:
+                m = (l + h)/2
+                em = self.evaluate(m)[axis] - x
+                if el * em > 0:
+                    l = m
+                    el = em 
+                else:
+                    h = m
+                    eh = em
+            return m
     
     def split(self, t, axis=0):
         """http://web.mit.edu/hyperbook/Patrikalakis-Maekawa-Cho/node13.html"""
@@ -60,6 +69,10 @@ class BezierCurve:
         plt.plot(*self.project(nb_points).T)
         plt.scatter(*self.points().T)
 
+    def __str__(self):
+        return f'Bezier curve through:\n{np.array([self.a, self.b, self.c, self.d])}'
+
+
 
 class BezierPath:
     
@@ -69,12 +82,12 @@ class BezierPath:
             self.curves.append(BezierCurve(points[k*3:(k+1)*3 + 1]))
 
     def get(self, x, axis=0):
-        for i, curve in enumerate(self.curves):
-            if curve.is_in(x):
-                break
-        t = curve.get_t(x, axis=axis)
-        return curve.evaluate(t)
-
+        points = []
+        for curve in self.curves:
+            t = curve.get_t(x, axis)
+            if not np.isnan(t):
+                points.append(curve.evaluate(t))
+        return points
         
     def add_point(self, x, axis=0):
         for i, curve in enumerate(self.curves):
@@ -157,8 +170,8 @@ class Board:
     def get_cut(self, x):
         result = np.zeros((len(self.x.points()), 2))
         for i, val in enumerate(result):
-            result[i, 0] = self.z_paths[i].get(x)[1]
-            result[i, 1] = self.y_paths[i].get(x)[1]
+            result[i, 0] = self.z_paths[i].get(x)[0][1]
+            result[i, 1] = self.y_paths[i].get(x)[0][1]
         return BezierPath(result)
 
         

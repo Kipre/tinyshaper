@@ -43,6 +43,10 @@ class TestBezierPath(unittest.TestCase):
 
 	path1 = BezierPath(np.array([[1, 2], [2, 3], [4, 2], [2, 1]]))
 
+	def test_get(self):
+		self.assertEqual(self.path1.get(0.5), [[0, 0]])
+
+
 
 if __name__ == '__main__':
 	unittest.main()
