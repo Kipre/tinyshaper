@@ -5,7 +5,7 @@ import json
 class BezierCurve:
     
     def __init__(self, points):
-        [self.a, self.b, self.c, self.d] = points
+        [self.a, self.b, self.c, self.d] = np.array(points, dtype=np.float64)
 
     def bounds(self, axis):
         values = self.points()[:, axis]
@@ -65,12 +65,24 @@ class BezierCurve:
         else:
             return False
 
-    def plot(self, nb_points=50):
-        plt.plot(*self.project(nb_points).T)
-        plt.scatter(*self.points().T)
+    def plot(self, nb_points=50, ax=None):
+        if ax:
+            ax.plot(*self.project(nb_points).T)   
+        else:
+            plt.plot(*self.project(nb_points).T)
+            plt.scatter(*self.points().T)
+        
+
+    def transform(self, scale_x, scale_y, translate_x, translate_y):
+        factors = np.array([scale_x, scale_y], dtype=np.float32)
+        bias = np.array([translate_x, translate_y], dtype=np.float32)
+        return BezierCurve([self.a * factors + bias, 
+        	                self.b * factors + bias, 
+        	                self.c * factors + bias, 
+        	                self.d * factors + bias])
 
     def __str__(self):
-        return f'Bezier curve through:\n{np.array([self.a, self.b, self.c, self.d])}'
+        return f'Bezier curve through:\n{self.points()}'
 
 
 
@@ -128,9 +140,15 @@ class BezierPath:
         return other.intercalate(factors, self)
 
 
-    def plot(self):
+    def plot(self, ax=None):
         for curve in self.curves:
-            curve.plot()
+            curve.plot(ax=ax)
+
+    def transform(self, scale_x, scale_y, translate_x, translate_y):
+        result = BezierPath([])
+        result.curves = [curve.transform(scale_x, scale_y, translate_x, translate_y) for curve in self.curves]
+        return result
+            
 
     def __len__(self):
         return len(self.curves)

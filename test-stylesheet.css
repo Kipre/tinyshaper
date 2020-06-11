@@ -1,0 +1,119 @@
+/* Grid Layout */
+.container {
+  display: grid;
+  grid-template-columns: 20rem 1fr 1fr 1fr;
+  grid-template-rows: 8rem 1fr 1fr 1fr auto;
+  grid-gap: 0px;
+  min-height: 99.8vh;
+}
+
+.header {
+  grid-column: span 4;
+}
+
+.title {
+  grid-column: span 3;
+  grid-row: span 3;
+}
+
+.sidebar {
+  grid-row: 2 / span 3;
+}
+
+.footer {
+  grid-column: span 4;
+}
+
+.content {
+  grid-column: 2 / span 4;
+}
+
+
+div {
+  margin-right: rem;
+  margin-top: rem;
+}
+
+/* Reset */
+html {
+  font-size: 62.5%;
+  box-sizing: border-box;
+}
+
+* {
+  box-sizing: inherit;
+}
+
+body {
+  margin: 0px;
+  background: #fff;
+  font-family: system-ui;
+  font-size: 1.8rem;
+  line-height: 1.5;
+}
+
+.container > *:nth-of-type(1) {
+  padding: 1rem 2rem;
+  color: #fff;
+  background: orange;
+}
+
+.container > *:nth-of-type(2) {
+  padding: 1rem 2rem;
+  color: #fff;
+  background: hotpink;
+}
+
+.container > *:nth-of-type(3) {
+  padding: 1rem 2rem;
+  color: #fff;
+  background: olivedrab;
+}
+
+.container > *:nth-of-type(4) {
+  padding: 1rem 2rem;
+  color: #fff;
+  background: cadetblue;
+}
+
+.container > *:nth-of-type(5) {
+  padding: 1rem 2rem;
+  color: #fff;
+  background: slategray;
+}
+
+.container > *:nth-of-type(6) {
+  padding: 1rem 2rem;
+  color: #fff;
+  background: chocolate;
+}
+
+.container > *:nth-of-type(7) {
+  padding: 1rem 2rem;
+  color: #fff;
+  background: darkmagenta;
+}
+
+.container > *:nth-of-type(8) {
+  padding: 1rem 2rem;
+  color: #fff;
+  background: tomato;
+}
+
+.container > *:nth-of-type(9) {
+  padding: 1rem 2rem;
+  color: #fff;
+  background: teal;
+}
+
+.container > *:nth-of-type(10) {
+  padding: 1rem 2rem;
+  color: #fff;
+  background: yellowgreen;
+}
+
+h1 {
+  margin: 0 0 1em;
+  color: #345;
+  text-align: center;
+}

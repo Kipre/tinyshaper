@@ -29,14 +29,12 @@ class TestBezierCurve(unittest.TestCase):
 														     [0.40952148, 0.94677734],
 														     [0.5       , 1.        ]]))
 
+	def test_transform(self):
+		np.testing.assert_almost_equal(self.curve1.transform(0.5, 1.5, 0.1, 0.3).points(), np.array([[0.6, 3.3], 
+			                                                                                       [1.1, 4.8], 
+			                                                                                       [2.1, 3.3], 
+			                                                                                       [1.1, 1.8]]))
 
-	# def test_split(self):
-	# 	c1, c2 = curve2.split(0.5322265625)
-	# 	assembling = np.concatenate((c1.points(), c2.points()[1:]))
-	# 	self.assertEqual(s.split(), ['hello', 'world'])
-	# 	# check that s.split fails when the separator is not a string
-	# 	with self.assertRaises(TypeError):
-	# 		s.split(2)
 
 
 class TestBezierPath(unittest.TestCase):
@@ -44,7 +42,8 @@ class TestBezierPath(unittest.TestCase):
 	path1 = BezierPath(np.array([[1, 2], [2, 3], [4, 2], [2, 1]]))
 
 	def test_get(self):
-		self.assertEqual(self.path1.get(0.5), [[0, 0]])
+		self.assertEqual(self.path1.get(0.1), [])
+
 
 
 
