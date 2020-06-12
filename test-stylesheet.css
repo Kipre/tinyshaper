@@ -28,6 +28,15 @@
   grid-column: 2 / span 4;
 }
 
+.main-area {
+  display: flex;
+  flex-direction: column;
+}
+
+.main-area > .canvas-container {
+  flex: auto;
+}
+
 
 div {
   margin-right: rem;

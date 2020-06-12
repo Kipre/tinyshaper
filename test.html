@@ -2,24 +2,32 @@
 <html lang="en">
 
 <head>
-<link href="test-stylesheet.css" rel="stylesheet">
+    <link href="test-stylesheet.css" rel="stylesheet">
 </head>
 
 <body>
-<section class="container">
-  <div class="header">header</div>
-  <div id='main' class="title">title</div>
-  <div class="sidebar">sidebar</div>
-<!--   <div class="content">content</div>
+    <section class="container">
+        <div class="header">header</div>
+        <div id='main' class="title main-area">
+        	<div id='cvs-container' class='canvas-container'>
+        		<canvas id='cvs1'/>
+        	</div>
+        	<div class='canvas-container'>
+        		<canvas id='cvs2'/>
+        	</div>
+        	<div class='canvas-container'>
+        		<canvas id='cvs3'/>
+        	</div>
+        </div>
+        <div class="sidebar">sidebar</div>
+        <!--   <div class="content">content</div>
   <div class="content">content</div>
   <div class="content">content</div> -->
-  <div class="footer">footer</div>
-</section>
+        <div class="footer">footer</div>
+    </section>
 </body>
-
 <script src="https://unpkg.com/react@16/umd/react.production.min.js" crossorigin></script>
 <script src="https://unpkg.com/react-dom@16/umd/react-dom.production.min.js" crossorigin></script>
-
 <script type="text/javascript" src="lib/surf.js"></script>
 <script type="text/javascript" src="lib/ui-test.js"></script>
 <script type="text/javascript" src="lib/test-main.js"></script>
