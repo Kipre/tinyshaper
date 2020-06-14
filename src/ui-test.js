@@ -17,6 +17,7 @@ class Point {
     isDragging = false;
     freedom = [1, 1];
     number = null;
+    r = configs.pointRadius;
 
     constructor(x, y, freedomX, freedomY, number) {
         this.x = x;
@@ -39,7 +40,7 @@ class Point {
 
     plot(ctx, selected = false) {
         ctx.beginPath();
-        ctx.arc(this.x, this.y, configs.pointRadius, 0, Math.PI * 2);
+        ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
         ctx.closePath();
         ctx.fill();
         if (selected) {
@@ -119,10 +120,12 @@ class Canvas {
     isDragging = false;
     currentPoint;
 
-    constructor(board, profile, id) {
+    constructor(board, profile, parent) {
         this.board = board;
         this.profile = profile;
-        this.canvas = document.getElementById(id);
+        this.parent = parent
+        this.canvas = document.createElement("canvas");
+        parent.appendChild(this.canvas);
         this.ctx = this.canvas.getContext("2d");
         this.canvas.onmousedown = (e) => this.onDown(e);
         this.canvas.onmouseup = (e) => this.onUp(e);
@@ -133,10 +136,10 @@ class Canvas {
 
 
     initialize(profile) {
-        this.profile = profile
-        let actual = document.getElementById('cvs-container').getBoundingClientRect();
-        this.width = Math.floor(actual.width);
-        this.height = Math.floor(actual.height);
+        this.profile = profile;
+        let actual = this.parent.getBoundingClientRect();
+        this.height = actual.height/3 - 1;
+        this.width = actual.width;
         this.canvas.height = this.height;
         this.canvas.width = this.width;
         this.padding = Math.floor(actual.height / 10);
@@ -159,21 +162,21 @@ class Canvas {
     }
 
     setPointControls(i) {
-        this.currentPoint = i;
-        if (i == -1) {
-            this.controls.setState({...this.controls.state, 
-                                    x: '', 
-                                    y: '', 
-                                    continuity: false,
-                                    pointSelected: false});
-        } else {
-            const [x, y] = this.from(this.points[i].pair);
-            this.controls.setState({...this.controls.state, 
-                                    x: round(x), 
-                                    y: round(y), 
-                                    continuity: (this.points[i] instanceof ChildPoint) ? this.points[i].parent.continuity : this.points[i].continuity,
-                                    pointSelected: true});
-        }
+        // this.currentPoint = i;
+        // if (i == -1) {
+        //     this.controls.setState({...this.controls.state, 
+        //                             x: '', 
+        //                             y: '', 
+        //                             continuity: false,
+        //                             pointSelected: false});
+        // } else {
+        //     const [x, y] = this.from(this.points[i].pair);
+        //     this.controls.setState({...this.controls.state, 
+        //                             x: round(x), 
+        //                             y: round(y), 
+        //                             continuity: (this.points[i] instanceof ChildPoint) ? this.points[i].parent.continuity : this.points[i].continuity,
+        //                             pointSelected: true});
+        // }
     }
 
     renderControls() {
@@ -399,8 +402,6 @@ class Canvas {
         }
     }
 }
-
-
 
 
 class BaseEditor extends React.Component {
