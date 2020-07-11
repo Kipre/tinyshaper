@@ -1,6 +1,7 @@
 
 const configs = {
-    boardPadding: 40,
+    boardXPadding: 0.1,
+    boardYPadding: 0.1,
     boardFillColor: "rgba(45, 252, 194, 0.3)",
     boardStrokeColor: "black",
     parentPointFillColor: "#444444",
@@ -97,7 +98,7 @@ class ChildPoint extends Point {
         this.y = norm * Math.sin(alpha) + this.parent.y
     }
 
-    update(dx, dy, propagate = true) {
+    update(dx, dy, propagate=true) {
         dx = dx * this.freedom[0]
         dy = dy * this.freedom[1]
         if (this.parent.continuity && this.sibling && propagate) {
@@ -116,115 +117,92 @@ class ChildPoint extends Point {
     }
 }
 
+class Redactor {
+
+    constructor(container, board) {
+        this.container = container;
+        this.board = board;
+        window.addEventListener('resize', () => { this.resize() });
+        this.initialize();
+    }
+
+    initialize() {
+
+        this.container.textContent = ''; // not mandatory
+
+        let actual = this.container.getBoundingClientRect();
+
+        this.z = new Canvas(this.board, 'z', this.container, 
+                            [this.board.length, this.board.width],
+                            'board-canvas');
+        this.y = new Canvas(this.board, 'y', this.container, 
+                            [this.board.length, this.board.thickness],
+                            'board-canvas');
+
+        this.doubleView = document.createElement("div");
+        this.doubleView.classList.add("double-view-container");
+        this.container.appendChild(this.doubleView);
+        this.x = new Canvas(this.board, 'x', this.doubleView, 
+                            [this.board.width, this.board.thickness],
+                            'double-board-canvas');
+        this.x0 = new Canvas(this.board, 'x0', this.doubleView, 
+                            [this.board.x0Width(), this.board.x0Thickness()],
+                            'double-board-canvas');
+        this.resize();
+    }
+
+    resize() {
+
+        let actual = this.container.getBoundingClientRect();
+        let doubleViewBounds = this.doubleView.getBoundingClientRect();
+
+        let newHeight = actual.height/3 - 3;
+
+        this.z.initialize([actual.width, newHeight]);
+
+        this.y.initialize([actual.width, newHeight]);
+
+        this.x.initialize([actual.width/2, newHeight]);
+        this.x0.initialize([actual.width/2, newHeight]);
+
+    }
+
+
+}
+
 class Canvas {
     isDragging = false;
     currentPoint;
 
-    constructor(board, profile, parent) {
+    constructor(board, profile, parent, scales, className, dims=null) {
+        [this.xFactor, this.yFactor] = scales;
         this.board = board;
         this.profile = profile;
         this.parent = parent
         this.canvas = document.createElement("canvas");
+        this.canvas.className = className;
         parent.appendChild(this.canvas);
         this.ctx = this.canvas.getContext("2d");
         this.canvas.onmousedown = (e) => this.onDown(e);
         this.canvas.onmouseup = (e) => this.onUp(e);
         this.canvas.onmousemove = (e) => this.onMove(e);
-        window.addEventListener('resize', () => { this.initialize(profile) });
-        this.initialize(profile);
+        if (dims != null) {
+            this.initialize(dims);
+        }
     }
 
 
-    initialize(profile) {
-        this.profile = profile;
-        let actual = this.parent.getBoundingClientRect();
-        this.height = actual.height/3 - 1;
-        this.width = actual.width;
+    initialize(dims) {
+        [this.width, this.height] = dims;
         this.canvas.height = this.height;
         this.canvas.width = this.width;
-        this.padding = Math.floor(actual.height / 10);
-        this.offsetX = actual.left;
-        this.offsetY = actual.top;
-        this.setRescaling(profile)
-        this.points = this.getPoints(profile);
+        this.padding = Math.floor(this.height * configs.boardYPadding);
+        this.offsetX = 0; // actual.left;
+        this.offsetY = 0; // actual.top;
+        this.rescaling = Math.max(this.xFactor / (this.width*(1-configs.boardXPadding*2)), this.yFactor / (this.height*(1-configs.boardYPadding*2)))
+        this.rescaling = 1 / this.rescaling;
+        this.points = this.getPoints(this.profile);
         this.render();
-    }
-    
-    onCommit(state) {
-        var newBoard = { ...this.board.board };
-        newBoard.width = state.width;
-        newBoard.length = state.length;
-        newBoard.thickness = state.thickness;
-        newBoard[this.profile] = this.returnPoints()
-        this.board.initialize(newBoard);
-        this.initialize(this.profile);
-        this.onBoardChange();
-    }
-
-    setPointControls(i) {
-        // this.currentPoint = i;
-        // if (i == -1) {
-        //     this.controls.setState({...this.controls.state, 
-        //                             x: '', 
-        //                             y: '', 
-        //                             continuity: false,
-        //                             pointSelected: false});
-        // } else {
-        //     const [x, y] = this.from(this.points[i].pair);
-        //     this.controls.setState({...this.controls.state, 
-        //                             x: round(x), 
-        //                             y: round(y), 
-        //                             continuity: (this.points[i] instanceof ChildPoint) ? this.points[i].parent.continuity : this.points[i].continuity,
-        //                             pointSelected: true});
-        // }
-    }
-
-    renderControls() {
-        this.controls = ReactDOM.render(
-            <Controls width={rBoard.width.toString()} 
-                      length={rBoard.length.toString()} 
-                      thickness={rBoard.thickness.toString()}
-                      pointSelected={false}
-                      continuity={false}
-                      onContinuity={() => {
-                        if (this.points[this.currentPoint].parent) {
-                            this.points[this.currentPoint].parent.continuity ^= true;
-                            this.points[this.currentPoint].update(0, 0);
-                        } else {
-                            this.points[this.currentPoint].continuity ^= true;
-                        }
-                      }}
-                      onCommit={(state) => {this.onCommit(state);}}
-                      onSave={() => {this.onSave(this.board.nonNested());}}
-                      setProfile={(profile) => {this.initialize(profile)}}/>,
-            document.getElementById('controls')
-        );
-    }
-
-    setRescaling(profile) {
-        switch (profile) {
-            case 'x':
-                this.xFactor = this.board.width;
-                this.yFactor = this.board.thickness;
-                break;
-            case 'x0':
-                this.xFactor = this.board.x0Width();
-                this.yFactor = this.board.x0Thickness();
-                break;
-            case 'y':
-                this.xFactor = this.board.length;
-                this.yFactor = this.board.thickness;
-                break;
-            case 'z':
-                this.xFactor = this.board.length;
-                this.yFactor = this.board.width;
-                break;
-            default:
-                throw new Error('Profile not understood');
-        }
-        this.rescaling = Math.max(this.xFactor / this.width, this.yFactor / this.height)
-        this.rescaling = 0.9 / this.rescaling
-
     }
 
     getPoints(profile) {
@@ -239,7 +217,7 @@ class Canvas {
             }
             
         })
-        for (var i=0; i<pointsArray.length; i++) {
+        for (var i=0; i<pointsArray.length; i++) {   // double loop not optimal
             if (pointsArray[(i-1 >= 0) ? i-1 : 0].number == -2) {
                 pointsArray[i].before = pointsArray[i-1];
                 pointsArray[i].before.parent = pointsArray[i];
@@ -352,13 +330,13 @@ class Canvas {
             var dy = p.y - my;
             if (dx * dx + dy * dy < p.r * p.r) {
                 this.isDragging = true;
-                this.setPointControls(i);
+                // // this.setPointControls(i);
                 p.isDragging = true;
                 break;
             }
         }
         if (!this.isDragging) {
-            this.setPointControls(-1);
+            // this.setPointControls(-1);
         }
         this.startX = mx;
         this.startY = my;
@@ -390,7 +368,7 @@ class Canvas {
                 var p = this.points[i];
                 if (p.isDragging) {
                     p.update(dx, dy)
-                    this.setPointControls(i)
+                    // this.setPointControls(i)
                 }
             }
 

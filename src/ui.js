@@ -4,12 +4,12 @@ function round(value, precision=100) {
 
 function DimensionInput(props) {
     return (<div class='dim-input'>
-                    <label>{props.name} : </label>
-                    <input class='dim-input-field' 
-                           value={props.dimension} 
-                           disabled={props.disabled} 
-                           onChange={(e) => {props.onDimensionChange(e.target.value);}}></input>
-                </div>)
+                <label>{props.name} : </label>
+                <input class='dim-input-field' 
+                       value={props.dimension} 
+                       disabled={props.disabled} 
+                       onChange={(e) => {props.onDimensionChange(e.target.value);}}></input>
+            </div>)
 }
 
 function ToggleSwitch(props) {

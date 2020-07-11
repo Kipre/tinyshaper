@@ -37,7 +37,7 @@
   flex: auto;
 }
 
-canvas {
+.board-canvas {
   border-bottom: solid 1px;
 }
 
@@ -74,4 +74,13 @@ h1 {
   margin: 0 0 1em;
   color: #345;
   text-align: center;
+}
+
+.double-view {
+  display:inline-block;
+}
+
+.double-view-container {
+  white-space: nowrap
+  
 }
