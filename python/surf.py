@@ -81,8 +81,15 @@ class BezierCurve:
         	                self.c * factors + bias, 
         	                self.d * factors + bias])
 
+    def reversed(self):
+        return BezierCurve([self.d, self.c, self.b, self.a])
+
     def __str__(self):
         return f'Bezier curve through:\n{self.points()}'
+
+    def equals(self, other):
+        return (self.points() == other.points()).all()
+
 
 
 
@@ -148,6 +155,26 @@ class BezierPath:
         result = BezierPath([])
         result.curves = [curve.transform(scale_x, scale_y, translate_x, translate_y) for curve in self.curves]
         return result
+
+    def project(self, nb_points, two_sides=False):
+        result = []
+        for curve in self.curves:
+            result.extend(curve.project(nb_points))
+        if two_sides:
+            for curve in self.transform(-1, 1, 0, 0).reversed().curves:
+                result.extend(curve.project(nb_points))
+        return np.array(result)
+
+    def reversed(self):
+        result = BezierPath([])
+        result.curves = [curve.reversed() for curve in reversed(self.curves)]
+        return result
+
+    def equals(self, other):
+        result = True
+        for curve1, curve2 in zip(self.curves, other.curves):
+            result *= curve1.equals(curve2)
+        return result
             
 
     def __len__(self):
@@ -191,6 +218,37 @@ class Board:
             result[i, 0] = self.z_paths[i].get(x)[0][1]
             result[i, 1] = self.y_paths[i].get(x)[0][1]
         return BezierPath(result)
+
+    def get_obj(self, slices=30, points_per_curve=15):
+        '''Get board as .obj formatted string'''
+
+        xs = (1 - np.cos(np.pi * np.linspace(0, 1, slices)))/2
+
+        result = 'o board'
+        verticles = '\n'
+        indexes = '\n'
+
+        all_points = []
+        for x in xs:
+            points = self.get_cut(x).project(points_per_curve, True)
+            all_points.extend(np.c_[points, np.full(len(points), x)] * np.array([self.width, self.thickness, self.length]))
+        all_points = np.array(all_points)
+
+        nb_points_per_slice = len(points)
+
+        for point in all_points:
+            verticles += f' \nv {point[0]} {point[1]} {point[2]}'
+            
+        d = list(range(1, nb_points_per_slice + 1)) + [1]
+
+        for slic in range(len(xs) - 1):
+            for n, m in zip(d, d[1:]):
+                indexes += f' \nf {n + nb_points_per_slice * slic} {m + nb_points_per_slice * slic} {n + nb_points_per_slice * (slic + 1)}'
+                indexes += f' \nf {m + nb_points_per_slice * slic} {n + nb_points_per_slice * (slic + 1)} {m + nb_points_per_slice * (slic + 1)}'
+                
+        return result + verticles + indexes
+
+
 
         
         
