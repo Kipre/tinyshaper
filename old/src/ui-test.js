@@ -1,6 +1,3 @@
-import * as THREE from './three.module.js';
-import { OBJLoader } from './OBJLoader.js';
-
 
 const configs = {
     padding: 0.1,
@@ -12,7 +9,6 @@ const configs = {
     highlightStrokeWidth: 2,
     pointStrokeColor: 'black',
     pointStrokeWidth: 1,
-    onlySelectedPoints: true,
     pointRadius: 6
 }
 
@@ -101,7 +97,7 @@ class ChildPoint extends Point {
         this.y = norm * Math.sin(alpha) + this.parent.y
     }
 
-    update(dx, dy, propagate = true) {
+    update(dx, dy, propagate=true) {
         dx = dx * this.freedom[0]
         dy = dy * this.freedom[1]
         if (this.parent.continuity && this.sibling && propagate) {
@@ -135,22 +131,22 @@ class Redactor {
 
         let actual = this.container.getBoundingClientRect();
 
-        this.z = new Canvas(this.board, 'z', this.container,
-            [this.board.length, this.board.width],
-            'board-canvas');
-        this.y = new Canvas(this.board, 'y', this.container,
-            [this.board.length, this.board.thickness],
-            'board-canvas');
+        this.z = new Canvas(this.board, 'z', this.container, 
+                            [this.board.length, this.board.width],
+                            'board-canvas');
+        this.y = new Canvas(this.board, 'y', this.container, 
+                            [this.board.length, this.board.thickness],
+                            'board-canvas');
 
         this.doubleView = document.createElement("div");
         this.doubleView.classList.add("double-view-container");
         this.container.appendChild(this.doubleView);
-        this.x = new Canvas(this.board, 'x', this.doubleView,
-            [this.board.width, this.board.thickness],
-            'double-board-canvas');
-        this.x0 = new Canvas(this.board, 'x0', this.doubleView,
-            [this.board.x0Width(), this.board.x0Thickness()],
-            'double-board-canvas');
+        this.x = new Canvas(this.board, 'x', this.doubleView, 
+                            [this.board.width, this.board.thickness],
+                            'double-board-canvas');
+        this.x0 = new Canvas(this.board, 'x0', this.doubleView, 
+                            [this.board.x0Width(), this.board.x0Thickness()],
+                            'double-board-canvas');
         this.resize();
     }
 
@@ -159,14 +155,14 @@ class Redactor {
         let actual = this.container.getBoundingClientRect();
         let doubleViewBounds = this.doubleView.getBoundingClientRect();
 
-        let newHeight = actual.height / 3 - 3;
+        let newHeight = actual.height/3 - 3;
 
         this.z.initialize([actual.width, newHeight]);
 
         this.y.initialize([actual.width, newHeight]);
 
-        this.x.initialize([actual.width / 2, newHeight]);
-        this.x0.initialize([actual.width / 2, newHeight]);
+        this.x.initialize([actual.width/2, newHeight]);
+        this.x0.initialize([actual.width/2, newHeight]);
 
     }
 
@@ -177,21 +173,18 @@ class Canvas {
     isDragging = false;
     currentPoint;
 
-    constructor(board, profile, parent, scales, className = null, dims = null) {
+    constructor(board, profile, parent, scales, className, dims=null) {
         [this.xFactor, this.yFactor] = scales;
         this.board = board;
         this.profile = profile;
+        this.parent = parent
         this.canvas = document.createElement("canvas");
-        this.canvas.className = (className) ? className : 'no-class';
+        this.canvas.className = className;
         parent.appendChild(this.canvas);
         this.ctx = this.canvas.getContext("2d");
-
-        // events
         this.canvas.onmousedown = (e) => this.onDown(e);
         this.canvas.onmouseup = (e) => this.onUp(e);
         this.canvas.onmousemove = (e) => this.onMove(e);
-
-        // initialization
         if (dims != null) {
             this.initialize(dims);
         }
@@ -202,9 +195,15 @@ class Canvas {
         [this.width, this.height] = dims;
         this.canvas.height = this.height;
         this.canvas.width = this.width;
-        this.rescaling = Math.min((this.width * (1 - configs.padding * 2)) / this.xFactor, (this.height * (1 - configs.padding * 2)) / this.yFactor)
-        this.offsetY = (this.height - this.rescaling * this.yFactor) / 2;
-        this.offsetX = (this.width - this.rescaling * this.xFactor) / 2;
+        this.rescaling = Math.min((this.width*(1-configs.padding*2)) / this.xFactor, (this.height*(1-configs.padding*2)) / this.yFactor)
+        
+        console.log(this.rescaling);
+
+        this.offsetY = (this.height - this.rescaling*this.yFactor) / 2; 
+        this.offsetX = (this.width - this.rescaling*this.xFactor) / 2; 
+
+        console.log(this.offsetX, this.offsetY);
+
         this.points = this.getPoints(this.profile);
         this.render();
     }
@@ -219,15 +218,15 @@ class Canvas {
             } else {
                 return new ChildPoint(...j)
             }
-
+            
         })
-        for (var i = 0; i < pointsArray.length; i++) { // double loop not optimal
-            if (pointsArray[(i - 1 >= 0) ? i - 1 : 0].number == -2) {
-                pointsArray[i].before = pointsArray[i - 1];
+        for (var i=0; i<pointsArray.length; i++) {   // double loop not optimal
+            if (pointsArray[(i-1 >= 0) ? i-1 : 0].number == -2) {
+                pointsArray[i].before = pointsArray[i-1];
                 pointsArray[i].before.parent = pointsArray[i];
             }
-            if (pointsArray[(i + 1 < pointsArray.length) ? i + 1 : i - 1].number == -1) {
-                pointsArray[i].after = pointsArray[i + 1];
+            if (pointsArray[(i+1 < pointsArray.length) ? i+1 : i-1].number == -1) {
+                pointsArray[i].after = pointsArray[i+1];
                 pointsArray[i].after.parent = pointsArray[i];
             }
             if (pointsArray[i].before && pointsArray[i].after) {
@@ -385,156 +384,21 @@ class Canvas {
     }
 }
 
-class ThreeDView {
 
-    camera;
-    scene;
-    renderer;
-    mouseX = 0;
-    mouseY = 0;
-    object;
-
-
-    constructor(container, board) {
-        this.container = container;
-        this.board = board
-    }
-
-    initialize() {
-
-        this.container.textContent = '';
-
-        let actual = this.container.getBoundingClientRect();
-
-        this.windowHalfX = actual.width / 2;
-        this.windowHalfY = actual.height / 2;
-
-        this.camera = new THREE.PerspectiveCamera(45, actual.width / actual.height, 1, 2000);
-        this.camera.position.z = 100;
-
-        // scene
-
-        this.scene = new THREE.Scene();
-
-        var ambientLight = new THREE.AmbientLight(0xcccccc, 0.4);
-        this.scene.add(ambientLight);
-
-        var pointLight = new THREE.PointLight(0xffffff, 0.8);
-        this.camera.add(pointLight);
-        this.scene.add(this.camera);
-
-        var loader = new OBJLoader(); // THREE.DefaultLoadingManager
-        this.object = loader.parse(this.board.getOBJ());
-
-
-        this.object.position.z = -100;
-        this.object.children[0].geometry.computeFaceNormals();
-        this.object.children[0].geometry.computeVertexNormals();
-        this.object.children[0].material.side = THREE.DoubleSide;
-        this.scene.add(this.object);
-
-        //Apply 
-
-
-        this.renderer = new THREE.WebGLRenderer();
-        this.renderer.setPixelRatio(window.devicePixelRatio);
-        this.renderer.setSize(actual.width - 1, actual.height - 1);
-        this.container.appendChild(this.renderer.domElement);
-
-        document.addEventListener('mousemove', (e) => { this.onDocumentMouseMove(e) }, false);
-
-        window.addEventListener('resize', () => { this.onWindowResize() }, false);
-
-        this.animate();
-
-    }
-
-    onWindowResize() {
-        let actual = this.container.getBoundingClientRect();
-        this.windowHalfX = actual.width / 2;
-        this.windowHalfY = actual.height / 2;
-
-        this.camera.aspect = actual.width / actual.height;
-        this.camera.updateProjectionMatrix();
-
-        this.renderer.setSize(actual.width - 1, actual.height - 1);
-    }
-
-    onDocumentMouseMove(event) {
-
-        this.mouseX = (event.clientX - this.windowHalfX) / 2;
-        this.mouseY = (event.clientY - this.windowHalfY) / 2;
-
-    }
-
-    animate() {
-
-        requestAnimationFrame(() => { this.animate() });
-        this.render();
-    }
-
-    render() {
-
-        this.camera.position.x += (this.mouseX - this.camera.position.x) * .05;
-        this.camera.position.y += (-this.mouseY - this.camera.position.y) * .05;
-
-        this.camera.lookAt(this.scene.position);
-
-        this.renderer.render(this.scene, this.camera);
-
-    }
-
-}
-
-class App {
-
-    redactorView = false;
-
-
-    constructor(board) {
-
-        var rBoard = new Board(board);
-
-        this.mainContainer = document.getElementById('canvases');
-        this.toolbar = document.getElementById('toolbar');
-
-
-        this.redactor = new Redactor(this.mainContainer, rBoard);
-        this.threeDView = new ThreeDView(this.mainContainer, rBoard)
-
-        this.toggleSwitch = ReactDOM.render(React.createElement(ToggleSwitch, {
-            text: 'view',
-            state: true,
-            trueCallback: () => { this.redactor.initialize(); },
-            falseCallback: () => { this.threeDView.initialize(); }
-        }, null), this.toolbar);
-    }
-}
-
-class ToggleSwitch extends React.Component {
-
+class BaseEditor extends React.Component {
     constructor(props) {
         super(props);
-        this.state = { internalState: props.state }
-    }
-
-    handleClick() {
-        const newState = !this.state.internalState;
-        if (newState) {
-            this.props.trueCallback();
-        } else {
-            this.props.falseCallback();
-        }
-        this.setState({ internalState:  newState})
+        this.state = {
+            length: props.length,
+            width: props.width,
+            thickness: props.thickness,
+            continuity: props.continuity
+        };
     }
 
     render() {
-        return React.createElement('button', { onClick: () => { this.handleClick() } }, this.props.text);
+        return (
+            <canvas class='controls'/>
+        );
     }
 }
-
-
-
-fetch("board.json")
-    .then(response => response.json())
-    .then(json => new App(json));
