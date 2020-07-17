@@ -241,7 +241,7 @@ class Board:
             
         d = list(range(1, nb_points_per_slice + 1)) + [1]
 
-        for slic in range(len(xs) - 1):
+        for slic in range(slices - 1):
             for n, m in zip(d, d[1:]):
                 indexes += f' \nf {n + nb_points_per_slice * slic} {m + nb_points_per_slice * slic} {n + nb_points_per_slice * (slic + 1)}'
                 indexes += f' \nf {m + nb_points_per_slice * slic} {n + nb_points_per_slice * (slic + 1)} {m + nb_points_per_slice * (slic + 1)}'
