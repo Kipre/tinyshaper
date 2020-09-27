@@ -1,0 +1,55 @@
+html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+body {
+    display: grid;
+    grid-template-columns: 14rem auto;
+    grid-template-rows: auto;
+    grid-gap: 0px;
+    min-height: 99.8vh;
+    background: #ffffff;
+}
+
+.toolbar {
+    grid-row: 1;
+    grid-column:  1;
+    background: #fce6ff;
+}
+
+.content {
+    grid-row: 1;
+    grid-column:  2;
+}
+
+dim-input {
+/*     float: right */
+}
+
+button {
+    background: #c7b7d7;
+    color: black;
+    border-radius: 5px;
+    padding: 6px 6px 6px 6px;
+}
+
+profile {
+    points-color: #a13939;
+}
+
+@media (prefers-color-scheme: dark) {
+    body {
+        background: #282829;
+        color: antiquewhite
+    }
+
+    button {
+        background: #634085;
+        color: aliceblue;
+    }
+
+    .toolbar {
+    background: #332b34;
+}
+}
