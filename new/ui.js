@@ -6,50 +6,44 @@ const style = {
     selectedPointStroke: '#a13939',
     outlineFill: dark ? '#4f4040' : '#bbe7fd',
     outlineStroke: dark ? '#53948f' : '#1e4a5f',
-    radius: 7
+    radius: 7,
+    floatPrecision: 2
 };
+const round = (x)=>Math.round(x * 10 ** style.floatPrecision) / 10 ** style.floatPrecision
 
 export function setup(board, logicBoard) {
     const parent = document.getElementById('canvases');
     const width = parent.offsetWidth - 3
       , height = (parent.offsetHeight / 3) - 5;
 
-    const canvasY = document.getElementById('canvas-y');
-    const callbacksY = setupPanel(board.y, board.length, board.thickness, canvasY, (window.innerHeight / 4) - 5, width, false);
+    const canvases = {};
 
-    const canvasZ = document.getElementById('canvas-z');
-    const callbacksZ = setupPanel(board.z, board.length, board.width, canvasZ, (window.innerHeight / 2.5) - 5, width, true);
+    canvases.y = document.getElementById('canvas-y');
+    setupPanel(board.y, board.length, board.thickness, canvases.y, (window.innerHeight / 4) - 5, width, false);
 
-    const canvasX = document.getElementById('canvas-x');
-    const callbacksX = setupPanel(board.x, board.width, board.thickness, canvasX, height, width / 2 - 5, false);
+    canvases.z = document.getElementById('canvas-z');
+    setupPanel(board.z, board.length, board.width, canvases.z, (window.innerHeight / 2.5) - 5, width, true);
 
-    const canvasX0 = document.getElementById('canvas-x0');
-    const callbacksX0 = setupPanel(board.x0, logicBoard.x0Width, logicBoard.x0Thickness, canvasX0, height, width / 2 - 5, false);
+    canvases.x = document.getElementById('canvas-x');
+    setupPanel(board.x, board.width, board.thickness, canvases.x, height, width / 2 - 5, false);
 
-    document.onmousedown = (e)=>{
-        callbacksX.onmousedown(e);
-        callbacksY.onmousedown(e);
-        callbacksZ.onmousedown(e);
-        callbacksX0.onmousedown(e);
-    }
-    document.onmousemove = (e)=>{
-        callbacksX.onmousemove(e);
-        callbacksY.onmousemove(e);
-        callbacksZ.onmousemove(e);
-        callbacksX0.onmousemove(e);
-    }
-    document.onmouseup = (e)=>{
-        callbacksX.onmouseup(e);
-        callbacksY.onmouseup(e);
-        callbacksZ.onmouseup(e);
-        callbacksX0.onmouseup(e);
-    }
+    canvases.x0 = document.getElementById('canvas-x0');
+    setupPanel(board.x0, logicBoard.x0Width, logicBoard.x0Thickness, canvases.x0, height, width / 2 - 5, false);
+
     document.getElementById('continuity').onclick = ()=>{
-        callbacksX.togglecontinuity();
-        callbacksY.togglecontinuity();
-        callbacksZ.togglecontinuity();
-        callbacksX0.togglecontinuity();
+        const event = new Event('continuitytoggle')
+        document.dispatchEvent(event);
     }
+
+    parent.addEventListener('pointselected', (e)=>{
+        const event = new Event('pointchanged')
+        for (const axis in canvases) {
+            if (canvases[axis] != e.target) {
+                canvases[axis].dispatchEvent(event);
+            }
+        }
+    }
+    )
 }
 
 function setupPanel(pts, objectWidth, objectHeight, canvas, height, width, full) {
@@ -65,39 +59,57 @@ function setupPanel(pts, objectWidth, objectHeight, canvas, height, width, full)
 
     renderUI(pts, context, canvas);
 
-    return {
-        onmousedown: e=>{
-            if (e.target == canvas) {
-                selected = touchesSomething(e.offsetX, e.offsetY, pts);
-                dragging = (selected >= 0);
-            } else if (e.target instanceof HTMLCanvasElement) {
-                selected = -1;
-                dragging = false;
+    canvas.onmousedown = e=>{
+        selected = touchesSomething(e.offsetX, e.offsetY, pts);
+        dragging = (selected >= 0);
+        const event = new CustomEvent('pointselected',{
+            bubbles: true,
+            detail: {
+                point: pts[selected],
+                move: (d, axis)=>{
+                    const move = (axis == 'x') ? [d, 0] : [0, d]
+                    movePoint(...move, selected, pts)
+                    renderUI(pts, context, canvas);
+                }
             }
-            // For the selected point to dissapear
+        });
+        canvas.dispatchEvent(event);
+        // For the selected point to dissapear
+        renderUI(pts, context, canvas);
+    }
+
+    canvas.onmousemove = e=>{
+        if (dragging && e.target == canvas) {
+            movePoint(...incrementsFromUI(e.movementX, e.movementY), selected, pts)
+            // Let UI know that the point moves
+            const event = new Event('pointmove');
+            document.dispatchEvent(event);
+
             renderUI(pts, context, canvas);
-        }
-        ,
-        onmousemove: e=>{
-            if (dragging && e.target == canvas) {
-                movePoint(...incrementsFromUI(e.movementX, e.movementY), selected, pts)
-                renderUI(pts, context, canvas);
-                return;
-            } else {
-                dragging = false;
-            }
-        }
-        ,
-        onmouseup: e=>{
+            return;
+        } else {
             dragging = false;
         }
-        ,
-        togglecontinuity: ()=>{
-            if (selected >= 0) {
-                parent(selected, pts).continuity ^= true;
-            }
+    }
+    ;
+
+    canvas.onmouseup = e=>{
+        dragging = false;
+    }
+    ;
+
+    document.addEventListener('continuitytoggle', (e)=>{
+        if (selected >= 0) {
+            parent(selected, pts).continuity ^= true;
         }
-    };
+    }
+    );
+
+    canvas.addEventListener('pointchanged', (e)=>{
+        selected = -1
+        renderUI(pts, context, canvas);
+    }
+    );
 
     function affineCoeficients(objectWidth, objectHeight, width, height) {
         const zoom = Math.min(0.9 * width / objectWidth, 0.8 * height / objectHeight);
@@ -307,37 +319,97 @@ customElements.define('dim-input', class extends HTMLElement {
         const shadowRoot = this.attachShadow({
             mode: 'open'
         });
+
+        this.name = this.getAttribute('name');
         const form = document.createElement('form');
         const input = document.createElement('input');
         const label = document.createElement('label');
 
-        const style = document.createElement('style');
-        style.textContent = 'label { padding: 4px; }';
+        input.disabled = true;
+        const css = document.createElement('style');
+        css.textContent = 'label { padding: 4px; }';
 
-        shadowRoot.appendChild(style);
+        shadowRoot.appendChild(css);
         shadowRoot.appendChild(form);
 
         input.value = this.textContent;
-        label.innerText = this.getAttribute('name');
-
+        label.innerText = this.name.charAt(0).toUpperCase() + this.name.slice(1);
         form.appendChild(label);
         form.appendChild(input);
         input.style.width = '100px';
         this.style.display = 'inline-block';
 
-        this.addEventListener('click', ()=>{
-            input.focus();
-            input.setSelectionRange(0, input.value.length)
-        }
-        );
+        const showValue = ()=>{
+            if (this.point) {
+                input.value = round(this.point[this.name]);
+                input.disabled = !this.point['freedom'+this.name.charAt(0).toUpperCase()];
+            } else {
+                input.value = ''
+                input.disabled = true;
+            }
+        };
+
+        document.addEventListener('pointselected', (e)=>{
+            this.point = e.detail.point;
+            this.movePoint = e.detail.move;
+            showValue();
+        });
+
+        document.addEventListener('pointmove', showValue);
 
         form.addEventListener('submit', e=>{
-            updateDisplay();
             e.preventDefault();
-        }
-        );
+            if (this.point) {
+                this.movePoint(parseFloat(input.value) - this.point[this.name], this.name);
+            }
+        });
+    }
+});
 
-        function updateDisplay() {}
+customElements.define('dims-input', class extends HTMLElement {
+    constructor() {
+        super();
+
+        const shadowRoot = this.attachShadow({
+            mode: 'open'
+        });
+
+        const form = document.createElement('form');
+        const style = document.createElement('style');
+        style.textContent = 'label { padding: 4px; }';
+        shadowRoot.appendChild(style);
+        shadowRoot.appendChild(form);
+        const inputs = {};
+
+        for (const dim of ['length', 'width', 'thickness']) {
+            const div = document.createElement('div');
+            const input = document.createElement('input');
+            inputs[dim] = input;
+            const label = document.createElement('label');
+            input.value = '';
+            label.innerText = dim.charAt(0).toUpperCase() + dim.slice(1);
+            form.appendChild(div);
+            div.appendChild(label);
+            div.appendChild(input);
+            input.style.width = '100px';
+
+        }
+
+        this.style.display = 'inline-block';
+
+        //         this.addEventListener('click', ()=>{
+        //             input.focus();
+        //             input.setSelectionRange(0, input.value.length)
+        //         }
+        //         );
+
+        //         form.addEventListener('submit', e=>{
+        //             updateDisplay();
+        //             e.preventDefault();
+        //         }
+        //         );
+
+        //         function updateDisplay() {}
     }
 }
 );

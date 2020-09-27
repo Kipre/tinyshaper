@@ -9,9 +9,4 @@ ui.setup(board, logicBoard);
 // const obj = logicBoard.getOBJ();
 
 // console.log(obj);
-class Try extends HTMLElement {
-     render() {
-         return html`<h2>It works</h2>`;
-     }
-}
-window.customElements.define('try-head', Try);
+
