@@ -66,7 +66,7 @@ function setupPanel(pts, objectWidth, objectHeight, canvas, height, width, full)
             bubbles: true,
             detail: {
                 point: pts[selected],
-                move: (d, axis)=>{
+                move: (d,axis)=>{
                     const move = (axis == 'x') ? [d, 0] : [0, d]
                     movePoint(...move, selected, pts)
                     renderUI(pts, context, canvas);
@@ -95,12 +95,13 @@ function setupPanel(pts, objectWidth, objectHeight, canvas, height, width, full)
 
     canvas.onmouseup = e=>{
         dragging = false;
-    }
-    ;
+    };
 
     document.addEventListener('continuitytoggle', (e)=>{
         if (selected >= 0) {
             parent(selected, pts).continuity ^= true;
+            movePoint(0, 0, selected, pts);
+            renderUI(pts, context, canvas);
         }
     }
     );
@@ -342,18 +343,20 @@ customElements.define('dim-input', class extends HTMLElement {
         const showValue = ()=>{
             if (this.point) {
                 input.value = round(this.point[this.name]);
-                input.disabled = !this.point['freedom'+this.name.charAt(0).toUpperCase()];
+                input.disabled = !this.point['freedom' + this.name.charAt(0).toUpperCase()];
             } else {
                 input.value = ''
                 input.disabled = true;
             }
-        };
+        }
+        ;
 
         document.addEventListener('pointselected', (e)=>{
             this.point = e.detail.point;
             this.movePoint = e.detail.move;
             showValue();
-        });
+        }
+        );
 
         document.addEventListener('pointmove', showValue);
 
@@ -362,9 +365,11 @@ customElements.define('dim-input', class extends HTMLElement {
             if (this.point) {
                 this.movePoint(parseFloat(input.value) - this.point[this.name], this.name);
             }
-        });
+        }
+        );
     }
-});
+}
+);
 
 customElements.define('dims-input', class extends HTMLElement {
     constructor() {
