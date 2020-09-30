@@ -3,6 +3,10 @@ html, body {
     padding: 0 !important;
 }
 
+label {
+    display: block;
+}
+
 body {
     display: grid;
     grid-template-columns: 14rem auto;

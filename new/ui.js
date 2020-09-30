@@ -11,24 +11,31 @@ const style = {
 };
 const round = (x)=>Math.round(x * 10 ** style.floatPrecision) / 10 ** style.floatPrecision
 
+function setBoardDimsControls(board) {
+    document.getElementById('dims-control').setDims(board);
+}
+
 export function setup(board, logicBoard) {
+
+    setBoardDimsControls(board);
+
     const parent = document.getElementById('canvases');
+    parent.textContent = '';
     const width = parent.offsetWidth - 3
       , height = (parent.offsetHeight / 3) - 5;
 
-    const canvases = {};
+    const canvas_obj = {};
+    for (let args of [['y', board.length, board.thickness, (window.innerHeight / 4) - 5, width, false],
+                      ['z', board.length, board.width, (window.innerHeight / 2.5) - 5, width, true],
+                      ['x', board.width, board.thickness, height, width / 2 - 5, false],
+                      ['x0', logicBoard.x0Width, logicBoard.x0Thickness, height, width / 2 - 5, false]]) {
+        const profile = args[0];
+        canvas_obj[profile] = document.createElement('canvas');
+        parent.appendChild(canvas_obj[profile]);
+        args[0] = board[profile];
+        setupPanel(canvas_obj[profile], ...args);
 
-    canvases.y = document.getElementById('canvas-y');
-    setupPanel(board.y, board.length, board.thickness, canvases.y, (window.innerHeight / 4) - 5, width, false);
-
-    canvases.z = document.getElementById('canvas-z');
-    setupPanel(board.z, board.length, board.width, canvases.z, (window.innerHeight / 2.5) - 5, width, true);
-
-    canvases.x = document.getElementById('canvas-x');
-    setupPanel(board.x, board.width, board.thickness, canvases.x, height, width / 2 - 5, false);
-
-    canvases.x0 = document.getElementById('canvas-x0');
-    setupPanel(board.x0, logicBoard.x0Width, logicBoard.x0Thickness, canvases.x0, height, width / 2 - 5, false);
+    }
 
     document.getElementById('continuity').onclick = ()=>{
         const event = new Event('continuitytoggle')
@@ -37,16 +44,17 @@ export function setup(board, logicBoard) {
 
     parent.addEventListener('pointselected', (e)=>{
         const event = new Event('pointchanged')
-        for (const axis in canvases) {
-            if (canvases[axis] != e.target) {
-                canvases[axis].dispatchEvent(event);
+        for (const axis in canvas_obj) {
+            if (canvas_obj[axis] != e.target) {
+                canvas_obj[axis].dispatchEvent(event);
             }
         }
     }
     )
+
 }
 
-function setupPanel(pts, objectWidth, objectHeight, canvas, height, width, full) {
+function setupPanel(canvas, pts, objectWidth, objectHeight, height, width, full) {
 
     canvas.width = width;
     canvas.height = height;
@@ -84,7 +92,6 @@ function setupPanel(pts, objectWidth, objectHeight, canvas, height, width, full)
             // Let UI know that the point moves
             const event = new Event('pointmove');
             document.dispatchEvent(event);
-
             renderUI(pts, context, canvas);
             return;
         } else {
@@ -95,7 +102,8 @@ function setupPanel(pts, objectWidth, objectHeight, canvas, height, width, full)
 
     canvas.onmouseup = e=>{
         dragging = false;
-    };
+    }
+    ;
 
     document.addEventListener('continuitytoggle', (e)=>{
         if (selected >= 0) {
@@ -372,6 +380,9 @@ customElements.define('dim-input', class extends HTMLElement {
 );
 
 customElements.define('dims-input', class extends HTMLElement {
+
+    board;
+    
     constructor() {
         super();
 
@@ -384,12 +395,14 @@ customElements.define('dims-input', class extends HTMLElement {
         style.textContent = 'label { padding: 4px; }';
         shadowRoot.appendChild(style);
         shadowRoot.appendChild(form);
-        const inputs = {};
+        this.inputs = {};
+        this.dims = ['length', 'width', 'thickness'];
+        this.style.display = 'inline-block';
 
-        for (const dim of ['length', 'width', 'thickness']) {
+        for (const dim of this.dims) {
             const div = document.createElement('div');
             const input = document.createElement('input');
-            inputs[dim] = input;
+            this.inputs[dim] = input;
             const label = document.createElement('label');
             input.value = '';
             label.innerText = dim.charAt(0).toUpperCase() + dim.slice(1);
@@ -399,22 +412,28 @@ customElements.define('dims-input', class extends HTMLElement {
             input.style.width = '100px';
 
         }
+        
+        const submit = document.createElement('input');
+        submit.setAttribute('type', 'submit')
+        form.appendChild(submit)
 
-        this.style.display = 'inline-block';
 
-        //         this.addEventListener('click', ()=>{
-        //             input.focus();
-        //             input.setSelectionRange(0, input.value.length)
-        //         }
-        //         );
+        form.addEventListener('submit', e=>{
+            e.preventDefault();
+            for (const dim of this.dims) {
+                this.board[dim] = parseFloat(this.inputs[dim].value);
+            }
+            const event = new Event('dimschange');
+            document.dispatchEvent(event);
+        }
+        );
+    }
 
-        //         form.addEventListener('submit', e=>{
-        //             updateDisplay();
-        //             e.preventDefault();
-        //         }
-        //         );
-
-        //         function updateDisplay() {}
+    setDims(board) {
+        this.board = board;
+        for (const dim of this.dims) {
+            this.inputs[dim].value = board[dim];
+        }
     }
 }
 );
