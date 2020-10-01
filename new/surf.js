@@ -306,16 +306,62 @@ export class Board {
         };
     }
 
+    get3d2(slices=30, nbPoints=15) {
+        let points;
+
+        const xs = Array.from({length: slices}, (x, i) => this.distribute(i/(slices - 1)));
+        
+        const normal = [],
+            indices = [],
+            position = [];
+
+        const allPoints = [];
+        for (const x of xs) {
+            points = this.getFullCut(x).project(nbPoints);
+            allPoints.push(...points.map((p) => [p.x, p.y, x]));
+        }
+        const nbPointsPerSlice = points.length;
+        for (const p of allPoints) {
+            const [a, b, c] = p;
+            position.push(a * this.width, b * this.thickness, c * this.length - this.length / 2);
+        }
+        
+        let i, j, k;
+        for (let slice=0; slice<slices-1; slice++) {
+            for (let n=1; n<=nbPointsPerSlice; n++) {
+                const m = (n != nbPointsPerSlice)? n+1 : 1;
+                indices.push(i = n + nbPointsPerSlice * slice,
+                             k = n + nbPointsPerSlice * (slice + 1) , 
+                             j = m + nbPointsPerSlice * slice);
+                indices.push(m + nbPointsPerSlice * slice, 
+                             n + nbPointsPerSlice * (slice + 1), 
+                             m + nbPointsPerSlice * (slice + 1));
+                const a = position.slice(i*3, i*(3 + 1));
+                const b = position.slice(j*3, j*(3 + 1));
+                const c = position.slice(k*3, k*(3 + 1));
+                const u = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
+                const v = [c[0] - a[0], c[1] - a[1], c[2] - a[2]];
+                normal.push(u[1]*v[2] - u[2]*v[1],
+                            u[0]*v[2] - u[2]*v[0],
+                            u[0]*v[1] - u[1]*v[0]);
+            }
+        }
+
+
+
+        return {indices: indices, position: position, normal:normal};
+    }
+
     getOBJ(slices=30, nbPoints=15) {
 
         const xs = Array.from({length: slices}, (x, i) => this.distribute(i/(slices - 1)));
         
-        var result = 'o board',
+        let result = 'o board',
             verticles = '\n',
             indexes = '\n',
             points;
 
-        var allPoints = []
+        const allPoints = []
         for (const x of xs) {
             points = this.getFullCut(x).project(nbPoints);
             allPoints = [...allPoints, ...points.map((p) => [p.x, p.y, x])]
@@ -326,8 +372,8 @@ export class Board {
             verticles += `\nv ${(a * this.width).toFixed(10)} ${(b * this.thickness).toFixed(10)} ${(c * this.length).toFixed(10)}`;
         }
 
-        for (var slice=0; slice<slices-1; slice++) {
-            for (var i=1; i<=nbPointsPerSlice; i++) {
+        for (let slice=0; slice<slices-1; slice++) {
+            for (let i=1; i<=nbPointsPerSlice; i++) {
                 const n = i;
                 const m = (n != nbPointsPerSlice)? n+1 : 1;
                 indexes += ` \nf ${n + nbPointsPerSlice * slice} ${m + nbPointsPerSlice * slice} ${n + nbPointsPerSlice * (slice + 1)}`;
