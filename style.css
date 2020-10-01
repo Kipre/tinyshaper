@@ -3,11 +3,8 @@ html, body {
     padding: 0 !important;
 }
 
-label {
-    display: block;
-}
-
 body {
+    font-family: 'Roboto', sans-serif;
     display: grid;
     grid-template-columns: 14rem auto;
     grid-template-rows: auto;
@@ -16,10 +13,39 @@ body {
     background: #ffffff;
 }
 
+#controls {
+    padding: 5px;
+}
+
 .toolbar {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
     grid-row: 1;
     grid-column:  1;
     background: #fce6ff;
+}
+
+h3 {
+    text-align: center;
+}
+
+h4 {
+    margin-top: 15px;
+    margin-bottom: 10px;
+}
+
+hr {
+    border: none;
+    border-top: solid #88718c 1px;
+}
+
+footer {
+    position: relative;
+    padding-bottom: 15px;
+    font-size:small;
+    width: 100%;
+    text-align: center;
 }
 
 .content {
@@ -27,15 +53,14 @@ body {
     grid-column:  2;
 }
 
-dim-input {
-/*     float: right */
-}
-
 button {
     background: #c7b7d7;
     color: black;
     border-radius: 5px;
-    padding: 6px 6px 6px 6px;
+    padding: 6px;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    width: 100%
 }
 
 profile {
@@ -51,6 +76,15 @@ profile {
     button {
         background: #634085;
         color: aliceblue;
+    }
+
+    a {
+        color:#85c0f3;
+    }
+
+    hr {
+        
+    border-top: solid #88718c 1px;
     }
 
     .toolbar {

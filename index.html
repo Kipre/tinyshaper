@@ -1,24 +1,39 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
-    <link href="stylesheet.css" rel="stylesheet">
-</head>
-
-<body>
-    <div class="container">
-        <div class="cont header">
-            <h1>Surf prototyping</h1>
+    <head>
+        <meta charset="utf-8">
+        <title>surf</title>
+        <link type="text/css" rel="stylesheet" href="style.css">
+        <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+    </head>
+    <body>
+        <div class="content" id='canvases'></div>
+        <div id='toolbar' class="toolbar">
+            <div id='controls'>
+                <h3>Surf</h3>
+                <hr>
+                <h4>View</h4>
+                <button id='view'>toggle view</button>
+                <hr>
+                <h4>Point</h4>
+                <dim-input name='x'></dim-input>
+                <dim-input name='y'></dim-input>
+                <div>
+                    <button id='continuity'>toggle continuity</button>
+                </div>
+                <hr>
+                <h4>Dimensions</h4>
+                <dims-input id='dims-control'></dims-input>
+            </div>
+            <footer>
+                Cyprien Neverov  
+                <br>
+                <a href="https://www.linkedin.com/in/cyprien-n/">LinkedIn</a>
+                | <a href="https://github.com/Kipre">GitHub</a>
+                | <a href="https://www.instagram.com/cyprienneverov/">Instagram</a>
+            </footer>
         </div>
-        <div id='canvases' class="cont title main-area"></div>
-        <div id='toolbar' class="cont sidebar"></div>
-    </div>
-    <div class="cont footer">footer</div>
-    </div>
-</body>
-<script crossorigin src="https://unpkg.com/react@16/umd/react.development.js"></script>
-<script crossorigin src="https://unpkg.com/react-dom@16/umd/react-dom.development.js"></script>
-<script type="text/javascript" src="lib/surf.js"></script>
-<script type="module" src="lib/ui.js"></script>
-
+    </body>
+    <script src="js/twgl-full.min.js"></script>
+    <script type='module' src='js/logic.js'></script>
 </html>

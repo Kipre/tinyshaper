@@ -267,46 +267,8 @@ export class Board {
     distribute(x) {
         return (1 - Math.cos(Math.PI * x))/2
     }
-
-    get3d(numDivisions=30, nbPoints=15) {
-        const positions = [];
-        const texcoords = [];
-        const indices = [];
-
-        var points = this.getFullCut(0.5).project()
-
-        const quadsDown = points.length - 1;
-
-        // generate points
-        for (let division = 0; division <= numDivisions; ++division) {
-            const u = division / numDivisions;
-            let x = this.distribute(division / numDivisions)
-            points = this.getFullCut(x).project()
-            points.forEach((p, ndx) => {
-                positions.push(p.x * this.width, p.y * this.thickness, x * this.length - this.length / 2);
-                const v = ndx / quadsDown;
-                texcoords.push(u, v); // v?
-            });
-        }
-
-        // generate indices
-        for (let division = 0; division < numDivisions; ++division) {
-            const column1Offset = division * points.length;
-            const column2Offset = column1Offset + points.length;
-            for (let quad = 0; quad < quadsDown; ++quad) {
-                indices.push(column1Offset + quad, column1Offset + quad + 1, column2Offset + quad);
-                indices.push(column1Offset + quad + 1, column2Offset + quad + 1, column2Offset + quad);
-            }
-        }
-
-        return {
-            position: positions,
-            texcoord: texcoords,
-            indices: indices,
-        };
-    }
-
-    get3d2(slices=30, nbPoints=15) {
+    
+    get3d(slices=30, nbPoints=15) {
         let points;
 
         const xs = Array.from({length: slices}, (x, i) => this.distribute(i/(slices - 1)));
@@ -349,7 +311,11 @@ export class Board {
 
 
 
-        return {indices: indices, position: position, normal:normal};
+        return {
+            indices: indices, 
+            position: position, 
+            normal:normal
+        };
     }
 
     getOBJ(slices=30, nbPoints=15) {

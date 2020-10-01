@@ -48,3 +48,7 @@ The point numbers correspond to the ones described in figure 1.
 If a point is real then the number is from 0 to 13.
 If the point is a tangent then the number will be -1 if the tangent corresponds to the previous "real" point and -2 if its the next.
 
+## TODO
+
+- better symmetry handling [0, 1]
+

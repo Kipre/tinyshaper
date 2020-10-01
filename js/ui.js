@@ -6,7 +6,9 @@ const style = {
     selectedPointStroke: '#a13939',
     outlineFill: dark ? '#4f4040' : '#bbe7fd',
     outlineStroke: dark ? '#53948f' : '#1e4a5f',
-    radius: 7,
+    pointStrokeWidth: 1,
+    touchRadius: 7,
+    visibleRadius: 5,
     floatPrecision: 2
 };
 const round = (x)=>Math.round(x * 10 ** style.floatPrecision) / 10 ** style.floatPrecision
@@ -25,10 +27,10 @@ export function setup(board, logicBoard) {
       , height = (parent.offsetHeight / 3) - 5;
 
     const canvas_obj = {};
-    for (let args of [['y', board.length, board.thickness, (window.innerHeight / 4) - 5, width, false],
-                      ['z', board.length, board.width, (window.innerHeight / 2.5) - 5, width, true],
-                      ['x', board.width, board.thickness, height, width / 2 - 5, false],
-                      ['x0', logicBoard.x0Width, logicBoard.x0Thickness, height, width / 2 - 5, false]]) {
+    for (let args of [['z', board.length, board.width, (window.innerHeight / 2.5) - 5, width, true],
+                      ['y', board.length, board.thickness, (window.innerHeight / 4) - 5, width, false],
+                      ['x0', logicBoard.x0Width, logicBoard.x0Thickness, height, (logicBoard.x0Width/(logicBoard.x0Width + board.width))*width - 1, false],
+                      ['x', board.width, board.thickness, height, (board.width/(logicBoard.x0Width + board.width))*width - 1, false]]) {
         const profile = args[0];
         canvas_obj[profile] = document.createElement('canvas');
         parent.appendChild(canvas_obj[profile]);
@@ -49,8 +51,7 @@ export function setup(board, logicBoard) {
                 canvas_obj[axis].dispatchEvent(event);
             }
         }
-    }
-    )
+    });
 
 }
 
@@ -68,7 +69,7 @@ function setupPanel(canvas, pts, objectWidth, objectHeight, height, width, full)
     renderUI(pts, context, canvas);
 
     canvas.onmousedown = e=>{
-        selected = touchesSomething(e.offsetX, e.offsetY, pts);
+        selected = touchesSomething(e.offsetX, e.offsetY, pts, selected);
         dragging = (selected >= 0);
         const event = new CustomEvent('pointselected',{
             bubbles: true,
@@ -148,11 +149,10 @@ function setupPanel(canvas, pts, objectWidth, objectHeight, height, width, full)
      * @param {Array} pts Array of currenty plotted points.
      * @return {number} Returns -1 if there is no match, otherwise returns the index of the matched point.
      */
-    function touchesSomething(v, w, pts) {
+    function touchesSomething(v, w, pts, selected) {
         for (const [i,point] of pts.entries()) {
             const [ve,we] = toUI(point.x, point.y);
-            const radius = style.radius
-            if ((ve - v) ** 2 + (we - w) ** 2 < radius ** 2) {
+            if ((ve - v) ** 2 + (we - w) ** 2 < style.touchRadius ** 2 && i != selected) {
                 return i;
             }
         }
@@ -199,8 +199,8 @@ function setupPanel(canvas, pts, objectWidth, objectHeight, height, width, full)
     function drawPoint(point, ctx) {
         ctx.beginPath();
         const [a,b] = toUI(point.x, point.y);
-        ctx.moveTo(a + style.radius, b);
-        ctx.arc(a, b, style.radius, 0, 2 * Math.PI);
+        ctx.moveTo(a + style.visibleRadius, b);
+        ctx.arc(a, b, style.visibleRadius, 0, 2 * Math.PI);
 
         ctx.fill();
         ctx.stroke();
@@ -321,6 +321,35 @@ function setupPanel(canvas, pts, objectWidth, objectHeight, height, width, full)
 
 }
 
+
+const diyElementsStyle = `
+    input {
+        text-align:center;
+        border-radius: 5px;
+        width: 60px;
+        margin: 2px;
+        font-size: 15px;
+        font-weight: 600;
+        display: inline-block;
+        float: left;
+    }
+
+    input[type='submit'] {
+        position: absolute; 
+        left: -200px;
+    }
+
+    label{
+        display: inline-block;
+        float: left;
+        clear: left;
+        width: 100px;
+        text-align: right;
+        padding: 4px;
+    }
+`;
+
+
 customElements.define('dim-input', class extends HTMLElement {
     constructor() {
         super();
@@ -331,22 +360,21 @@ customElements.define('dim-input', class extends HTMLElement {
 
         this.name = this.getAttribute('name');
         const form = document.createElement('form');
+        const div = document.createElement('div');
         const input = document.createElement('input');
         const label = document.createElement('label');
-
-        input.disabled = true;
         const css = document.createElement('style');
-        css.textContent = 'label { padding: 4px; }';
+        css.textContent = diyElementsStyle;
 
         shadowRoot.appendChild(css);
         shadowRoot.appendChild(form);
+        form.appendChild(div);
+        div.appendChild(label);
+        div.appendChild(input);
 
         input.value = this.textContent;
+        input.disabled = true;
         label.innerText = this.name.charAt(0).toUpperCase() + this.name.slice(1);
-        form.appendChild(label);
-        form.appendChild(input);
-        input.style.width = '100px';
-        this.style.display = 'inline-block';
 
         const showValue = ()=>{
             if (this.point) {
@@ -357,7 +385,6 @@ customElements.define('dim-input', class extends HTMLElement {
                 input.disabled = true;
             }
         }
-        ;
 
         document.addEventListener('pointselected', (e)=>{
             this.point = e.detail.point;
@@ -392,24 +419,24 @@ customElements.define('dims-input', class extends HTMLElement {
 
         const form = document.createElement('form');
         const style = document.createElement('style');
-        style.textContent = 'label { padding: 4px; }';
+        style.textContent = diyElementsStyle;
         shadowRoot.appendChild(style);
         shadowRoot.appendChild(form);
         this.inputs = {};
         this.dims = ['length', 'width', 'thickness'];
-        this.style.display = 'inline-block';
 
         for (const dim of this.dims) {
             const div = document.createElement('div');
             const input = document.createElement('input');
-            this.inputs[dim] = input;
             const label = document.createElement('label');
+
+            this.inputs[dim] = input;
             input.value = '';
             label.innerText = dim.charAt(0).toUpperCase() + dim.slice(1);
+
             form.appendChild(div);
             div.appendChild(label);
             div.appendChild(input);
-            input.style.width = '100px';
 
         }
         
@@ -435,5 +462,45 @@ customElements.define('dims-input', class extends HTMLElement {
             this.inputs[dim].value = board[dim];
         }
     }
+});
+
+
+export function svg(parent) {
+
+    const ns = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(ns, "svg");
+    svg.setAttribute('width', '100px');
+    svg.setAttribute('height', '100px');
+    const [a, b, c] = [[30, 30], [70, 50], [45, 70]];
+
+    drawLine(...a, ...c);
+    drawLine(...c, ...b);
+    drawPoint(...a, style.childPointFill);
+    drawPoint(...b, style.childPointFill);
+    drawPoint(...c, style.parentPointFill);
+
+    parent.appendChild(svg);
+
+    function drawPoint(x, y, fillColor) {
+        const circle = document.createElementNS(ns, "circle");
+        circle.setAttribute('cx', x);
+        circle.setAttribute('cy', y);
+        circle.setAttribute('r', style.visibleRadius);
+        circle.setAttribute('stroke', style.pointStroke);
+        circle.setAttribute('stroke-width', 1);
+        circle.setAttribute('fill', fillColor);
+        svg.appendChild(circle);
+    }
+
+    function drawLine(x1, y1, x2, y2) {
+        const line = document.createElementNS(ns, "line");
+        line.setAttribute('x1', x1);
+        line.setAttribute('y1', y1);
+        line.setAttribute('x2', x2);
+        line.setAttribute('y2', y2);
+        line.setAttribute('stroke-width', 1);
+        line.setAttribute('stroke', style.pointStroke);
+        svg.appendChild(line);
+
+    }
 }
-);
