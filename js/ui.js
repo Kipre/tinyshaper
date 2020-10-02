@@ -329,7 +329,7 @@ const diyElementsStyle = `
         width: 60px;
         margin: 2px;
         font-size: 15px;
-        font-weight: 600;
+        font-weight: 500;
         display: inline-block;
         float: left;
     }
@@ -468,10 +468,23 @@ customElements.define('dims-input', class extends HTMLElement {
 export function svg(parent) {
 
     const ns = "http://www.w3.org/2000/svg";
-    const svg = document.createElementNS(ns, "svg");
-    svg.setAttribute('width', '100px');
-    svg.setAttribute('height', '100px');
-    const [a, b, c] = [[30, 30], [70, 50], [45, 70]];
+    let svg = document.createElementNS(ns, "svg");
+    svg.setAttribute('width', '50px');
+    svg.setAttribute('height', '50px');
+    let [a, b, c] = [[10, 10], [15, 45], [45, 15]];
+
+    drawLine(...a, ...c);
+    drawLine(...c, ...b);
+    drawPoint(...a, style.childPointFill);
+    drawPoint(...b, style.childPointFill);
+    drawPoint(...c, style.parentPointFill);
+
+    parent.appendChild(svg);
+
+    svg = document.createElementNS(ns, "svg");
+    svg.setAttribute('width', '50px');
+    svg.setAttribute('height', '50px');
+    [a, b, c] = [[10, 10], [45, 45], [30, 30]];
 
     drawLine(...a, ...c);
     drawLine(...c, ...b);

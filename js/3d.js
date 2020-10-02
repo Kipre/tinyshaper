@@ -60,8 +60,7 @@ void main() {
                 u_specular * litR.z * u_specularFactor)).rgb,
       diffuseColor.a);
   gl_FragColor = outColor;
-}
-    `;
+}`;
 
 export function show(logicBoard) {
     const parent = document.getElementById('canvases');
@@ -106,7 +105,8 @@ export function show(logicBoard) {
     };
     canvas.addEventListener('mousemove', (e)=>{
         if (dragging) {
-            [xMov,yMov] = [xMov + e.movementX / 300, yMov - e.movementY / 200];
+            [xMov,yMov] = [xMov + e.movementX / 300, 
+                           Math.max(Math.min(yMov - e.movementY / 200, Math.PI/2), -Math.PI/2)];
             render(0);
         }
     });

@@ -50,5 +50,6 @@ If the point is a tangent then the number will be -1 if the tangent corresponds 
 
 ## TODO
 
-- better symmetry handling [0, 1]
+- better symmetry rendering (full) [0, 1] 
+- release selected point on toggle view
 
