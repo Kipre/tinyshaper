@@ -469,9 +469,9 @@ export function svg(parent) {
 
     const ns = "http://www.w3.org/2000/svg";
     let svg = document.createElementNS(ns, "svg");
-    svg.setAttribute('width', '50px');
-    svg.setAttribute('height', '50px');
-    let [a, b, c] = [[10, 10], [15, 45], [45, 15]];
+    svg.setAttribute('width', '41px');
+    svg.setAttribute('height', '41px');
+    let [a, b, c] = [[5, 5], [15, 35], [35, 25]];
 
     drawLine(...a, ...c);
     drawLine(...c, ...b);
@@ -482,9 +482,9 @@ export function svg(parent) {
     parent.appendChild(svg);
 
     svg = document.createElementNS(ns, "svg");
-    svg.setAttribute('width', '50px');
-    svg.setAttribute('height', '50px');
-    [a, b, c] = [[10, 10], [45, 45], [30, 30]];
+    svg.setAttribute('width', '41px');
+    svg.setAttribute('height', '41px');
+    [a, b, c] = [[5, 5], [35, 35], [22, 22]];
 
     drawLine(...a, ...c);
     drawLine(...c, ...b);
