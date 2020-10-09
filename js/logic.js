@@ -20,8 +20,9 @@ document.addEventListener('dimschange', ()=>{
     }
 });
 
-document.getElementById('view').onclick = ()=>{
+document.addEventListener('viewtoggle', ()=>{
     if (editorView) {
+        document.dispatchEvent(new Event('pointselected'));
         logicBoard.initialize(board);
         stop = trid.show(logicBoard);
     } else {
@@ -29,6 +30,6 @@ document.getElementById('view').onclick = ()=>{
         ui.setup(board, logicBoard);
     }
     editorView ^= true;
-}
+});
 
-ui.svg(document.getElementById('controls'))
+// ui.svg(document.getElementById('controls'))

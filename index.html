@@ -14,14 +14,12 @@
                 <h3>Surf</h3>
                 <hr>
                 <h4>View</h4>
-                <button id='view'>toggle view</button>
+                <toggle-switch name='Toggle view' left='2D' right='3D' event='viewtoggle'></toggle-switch>
                 <hr>
                 <h4>Point</h4>
                 <dim-input name='x'></dim-input>
                 <dim-input name='y'></dim-input>
-                <div>
-                    <button id='continuity'>toggle continuity</button>
-                </div>
+                <toggle-switch id='continuityswitch' name='Continuity' left='On' right='Off' event='continuitytoggle' disabled></toggle-switch>
                 <hr>
                 <h4>Dimensions</h4>
                 <dims-input id='dims-control'></dims-input>

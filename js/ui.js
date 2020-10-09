@@ -39,20 +39,6 @@ export function setup(board, logicBoard) {
 
     }
 
-    document.getElementById('continuity').onclick = ()=>{
-        const event = new Event('continuitytoggle')
-        document.dispatchEvent(event);
-    }
-
-    parent.addEventListener('pointselected', (e)=>{
-        const event = new Event('pointchanged')
-        for (const axis in canvas_obj) {
-            if (canvas_obj[axis] != e.target) {
-                canvas_obj[axis].dispatchEvent(event);
-            }
-        }
-    });
-
 }
 
 function setupPanel(canvas, pts, objectWidth, objectHeight, height, width, full) {
@@ -108,16 +94,18 @@ function setupPanel(canvas, pts, objectWidth, objectHeight, height, width, full)
 
     document.addEventListener('continuitytoggle', (e)=>{
         if (selected >= 0) {
-            parent(selected, pts).continuity ^= true;
+            activeFamily(selected, pts).forEach((e)=>{e.continuity ^= true;})
             movePoint(0, 0, selected, pts);
             renderUI(pts, context, canvas);
         }
     }
     );
 
-    canvas.addEventListener('pointchanged', (e)=>{
-        selected = -1
-        renderUI(pts, context, canvas);
+    document.addEventListener('pointselected', (e)=>{
+        if (e.target != canvas) {
+            selected = -1
+            renderUI(pts, context, canvas);
+        }
     }
     );
 
@@ -323,15 +311,66 @@ function setupPanel(canvas, pts, objectWidth, objectHeight, height, width, full)
 
 
 const diyElementsStyle = `
-    input {
+    
+
+    input, .box {
         text-align:center;
         border-radius: 5px;
-        width: 60px;
+        width: 70px;
         margin: 2px;
         font-size: 15px;
         font-weight: 500;
         display: inline-block;
         float: left;
+    }
+
+    .box {
+        cursor: pointer;
+        width: 74px;
+        position: relative;
+        background: #ffffff;
+        color: #000000;
+        padding: 3px 2px;
+    }
+
+    .switch {   
+        position: absolute;
+        z-index: 10;
+        left: 0px;
+        top: 0px;
+        width: 35px;
+        height: 20px;
+        background: rgb(248 248 248 / 0%);
+        border-width: 2px;
+        border-style: inset;
+        border-color: rgb(118, 118, 118);
+        border-radius: 5px;
+        transition: .2s;
+    }
+
+    .checked > .switch {
+        transform: translateX(39px);
+    }
+
+    .disabled > .switch {
+        border-color: rgba(118, 118, 118, 0);
+        transition: 0s;
+    }
+
+    .disabled {   
+        background: rgba(239, 239, 239, 0.3);
+        color: rgb(110 110 110);
+        transition: .2s;
+        border-style: inset;
+        border-color: rgba(118, 118, 118, 0.3);
+        border-width: 2px;
+        padding: 1px 0px;
+        transition: .0s;
+    }
+
+
+    .container {
+        height: 30px;
     }
 
     input[type='submit'] {
@@ -344,10 +383,30 @@ const diyElementsStyle = `
         float: left;
         clear: left;
         width: 100px;
+        font-size: 14px;
         text-align: right;
         padding: 4px;
     }
+
+    @media (prefers-color-scheme: dark) {
+    input, .box {
+        background: #5c585d;
+        color: #e8dbc6;
+    }
+
+    .switch {
+        border-style: solid;
+        border-color: rgb(181 181 181);
+    }
+
+    input:disabled, .disabled {
+        cursor: default;
+        background: #3f3c40;
+        color: rgb(110 110 110);
+    }
+}
 `;
+
 
 
 customElements.define('dim-input', class extends HTMLElement {
@@ -361,6 +420,7 @@ customElements.define('dim-input', class extends HTMLElement {
         this.name = this.getAttribute('name');
         const form = document.createElement('form');
         const div = document.createElement('div');
+        div.classList.add('container');
         const input = document.createElement('input');
         const label = document.createElement('label');
         const css = document.createElement('style');
@@ -387,8 +447,8 @@ customElements.define('dim-input', class extends HTMLElement {
         }
 
         document.addEventListener('pointselected', (e)=>{
-            this.point = e.detail.point;
-            this.movePoint = e.detail.move;
+            this.point = e.detail?.point;
+            this.movePoint = e.detail?.move;
             showValue();
         }
         );
@@ -416,7 +476,7 @@ customElements.define('dims-input', class extends HTMLElement {
         const shadowRoot = this.attachShadow({
             mode: 'open'
         });
-
+        
         const form = document.createElement('form');
         const style = document.createElement('style');
         style.textContent = diyElementsStyle;
@@ -464,48 +524,123 @@ customElements.define('dims-input', class extends HTMLElement {
     }
 });
 
+customElements.define('toggle-switch', class extends HTMLElement {
+    
+    constructor() {
+        super();
 
-export function svg(parent) {
+        const boxHeight = 25;
 
-    const ns = "http://www.w3.org/2000/svg";
-    let svg = document.createElementNS(ns, "svg");
-    svg.setAttribute('width', '41px');
-    svg.setAttribute('height', '41px');
-    let [a, b, c] = [[5, 5], [15, 35], [35, 25]];
+        const shadowRoot = this.attachShadow({
+            mode: 'open'
+        });
 
-    drawLine(...a, ...c);
-    drawLine(...c, ...b);
-    drawPoint(...a, style.childPointFill);
-    drawPoint(...b, style.childPointFill);
-    drawPoint(...c, style.parentPointFill);
+        this.name = this.getAttribute('name');
+        this.left = this.getAttribute('left');
+        this.right = this.getAttribute('right');
+        this.event = this.getAttribute('event');
+        
+        const div = document.createElement('div');
+        div.classList.add('container');
+        const label = document.createElement('label');
+        this.box = document.createElement('div');
+        this.box.classList.add('box');
+        if (this.getAttribute('disabled') != null) {
+            this.box.classList.add('disabled');
+        }
+        this.box.style.height = boxHeight;
 
-    parent.appendChild(svg);
+        const switsh = document.createElement('span');
+        switsh.classList.add('switch');
+        switsh.style.height = boxHeight - 4;
+        switsh.style.width = 33;
 
-    svg = document.createElementNS(ns, "svg");
-    svg.setAttribute('width', '41px');
-    svg.setAttribute('height', '41px');
-    [a, b, c] = [[5, 5], [35, 35], [22, 22]];
 
-    drawLine(...a, ...c);
-    drawLine(...c, ...b);
-    drawPoint(...a, style.childPointFill);
-    drawPoint(...b, style.childPointFill);
-    drawPoint(...c, style.parentPointFill);
+        const css = document.createElement('style');
 
-    parent.appendChild(svg);
+        css.textContent = diyElementsStyle;
 
-    function drawPoint(x, y, fillColor) {
-        const circle = document.createElementNS(ns, "circle");
-        circle.setAttribute('cx', x);
-        circle.setAttribute('cy', y);
-        circle.setAttribute('r', style.visibleRadius);
-        circle.setAttribute('stroke', style.pointStroke);
-        circle.setAttribute('stroke-width', 1);
-        circle.setAttribute('fill', fillColor);
-        svg.appendChild(circle);
+        shadowRoot.appendChild(css);
+        shadowRoot.appendChild(div);
+        div.appendChild(label);
+        div.appendChild(this.box);
+        this.box.innerText = `${this.left} \u00A0\u00A0\u00A0 ${this.right}`;
+        this.box.appendChild(switsh);
+
+        label.innerText = this.name;
+
+        this.box.onclick = () => {
+            this.box.classList.toggle('checked');
+            const event = new Event(this.event);
+            document.dispatchEvent(event);
+        }
+        
     }
 
-    function drawLine(x1, y1, x2, y2) {
+    disable() {
+        this.box.classList.add('disabled');
+    }
+
+    enable() {
+        this.box.classList.remove('disabled');
+    }
+
+    check() {
+        this.box.classList.add('checked');
+    }
+
+    uncheck() {
+        this.box.classList.remove('checked');
+    }
+
+});
+
+document.addEventListener('pointselected', (e)=>{
+    const tog = document.getElementById('continuityswitch');
+    if (e.detail?.point) {
+        tog.enable();
+        (e.detail.point.continuity)? tog.uncheck(): tog.check();
+    } else {
+        tog.disable();
+    }
+}
+);
+
+const svg = (function() {
+  const ns = "http://www.w3.org/2000/svg";
+  function drawCont() {
+    const img = document.createElementNS(ns, "svg");
+    img.setAttribute('width', '41px');
+    img.setAttribute('height', '41px');
+    const [a, b, c] = [[5, 5], [15, 35], [35, 25]];
+    const [a1, b1, c1] = [[5, 5], [35, 35], [22, 22]];
+
+    img.appendChild(mkAnimLine(...a, ...c, ...a1, ...c1));
+    img.appendChild(mkAnimLine(...c, ...b, ...c1, ...b1));
+    img.appendChild(mkAnimCircle(...a, ...a1, style.childPointFill));
+    img.appendChild(mkAnimCircle(...b, ...b1, style.childPointFill));
+    img.appendChild(mkAnimCircle(...c, ...c1, style.parentPointFill));
+
+    return img;
+  }
+
+  function mkAnimCircle(x, y, x1, y1, fillColor) {
+        const circle = mkCircle(x, y, style.visibleRadius, style.pointStroke, fillColor);
+        circle.appendChild(mkAnim('cx', x, x1));
+        circle.appendChild(mkAnim('cy', y, y1));
+        return circle;
+    }    
+
+    function mkAnimLine(x, y, x1, y1, x2, y2, x3, y3) {
+      const line = mkLine(x, y, x1, y1);
+      line.appendChild(mkAnim('x1', x, x2));
+      line.appendChild(mkAnim('y1', y, y2));
+      line.appendChild(mkAnim('x2', x1, x3));
+      line.appendChild(mkAnim('y2', y1, y3));
+      return line;
+    }
+
+    function mkLine(x1, y1, x2, y2) {
         const line = document.createElementNS(ns, "line");
         line.setAttribute('x1', x1);
         line.setAttribute('y1', y1);
@@ -513,7 +648,61 @@ export function svg(parent) {
         line.setAttribute('y2', y2);
         line.setAttribute('stroke-width', 1);
         line.setAttribute('stroke', style.pointStroke);
-        svg.appendChild(line);
-
+        return line;
     }
-}
+
+    function mkCircle(x, y, r, stroke, fill) {
+        const circle = document.createElementNS(ns, "circle");
+        circle.setAttribute('cx', x);
+        circle.setAttribute('cy', y);
+        circle.setAttribute('r', r);
+        circle.setAttribute('stroke', stroke);
+        circle.setAttribute('stroke-width', 1);
+        circle.setAttribute('fill', fill);
+        return circle;
+    }
+
+    function mkAnim(attr, from, to) {
+        const anim = document.createElementNS(ns, "animate");
+        anim.setAttribute('attributeName', attr);
+        anim.setAttribute('from', from);
+        anim.setAttribute('to', to);
+        anim.setAttribute('dur', "1s");
+        anim.setAttribute('repeatCount', 'indefinite');
+        return anim;
+    }
+            
+    return {drawCont: drawCont}
+})();
+
+const toggleSwitchStyle = `
+
+
+`;
+
+
+// customElements.define('toggle-switch', class extends HTMLElement {
+
+//     state = false;
+    
+//     constructor() {
+//         super();
+
+//         const shadowRoot = this.attachShadow({
+//             mode: 'open'
+//         });
+
+//         const button = document.createElement('button');
+//         button.classList.add("switch");
+//         const img = svg.drawCont()
+//         button.appendChild(img);
+
+//         const style = document.createElement('style');
+//         style.textContent = toggleSwitchStyle;
+//         shadowRoot.appendChild(style);
+
+//         shadowRoot.appendChild(button);
+//     }
+// });
+
+
