@@ -12,19 +12,19 @@ In order to save the prototypes a json-based format is used:
     "y": [
         [0, 1.2899999999999994, 0, 1, 7],
         [0.22, 1.1499999999999992, 1, 1, -1],
-        //... other points
+        ["... other points"],
         [0, 0.9758333333333337, 0, 1, 0]
     ],
     "x": [
         [0, 1.0000000000000004, 0, 0, 6],
-        //... other points
+        ["... other points"],
         [0, 0, 0, 0, 4]
     ],
     "x0": [
-        //... same
+        ["... same"],
     ],
     "z": [
-        //... same
+        ["... same"],
     ],
     "length": 222,
     "width": 28.5,
