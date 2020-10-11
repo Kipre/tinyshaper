@@ -11,6 +11,7 @@ const style = {
     visibleRadius: 5,
     floatPrecision: 2
 };
+const dpi = window.devicePixelRatio;
 const round = (x)=>Math.round(x * 10 ** style.floatPrecision) / 10 ** style.floatPrecision
 
 function setBoardDimsControls(board) {
@@ -41,10 +42,15 @@ export function setup(board, logicBoard) {
 
 }
 
+
+
+
+
 function setupPanel(canvas, pts, objectWidth, objectHeight, height, width, full) {
 
     canvas.width = width;
     canvas.height = height;
+
     const context = canvas.getContext('2d');
     const [xFactor,xTranslation,yFactor,yTranslation] = affineCoeficients(objectWidth, objectHeight, width, height);
 
@@ -61,7 +67,7 @@ function setupPanel(canvas, pts, objectWidth, objectHeight, height, width, full)
             bubbles: true,
             detail: {
                 point: pts[selected],
-                move: (d,axis)=>{
+                move: (d, axis)=>{
                     const move = (axis == 'x') ? [d, 0] : [0, d]
                     movePoint(...move, selected, pts)
                     renderUI(pts, context, canvas);
@@ -83,6 +89,11 @@ function setupPanel(canvas, pts, objectWidth, objectHeight, height, width, full)
             return;
         } else {
             dragging = false;
+            if (touchesSomething(e.offsetX, e.offsetY, pts, selected) >= 0) {
+                canvas.style.cursor = 'pointer';
+            } else {
+                canvas.style.cursor = 'default';
+            }
         }
     }
     ;
@@ -140,7 +151,7 @@ function setupPanel(canvas, pts, objectWidth, objectHeight, height, width, full)
     function touchesSomething(v, w, pts, selected) {
         for (const [i,point] of pts.entries()) {
             const [ve,we] = toUI(point.x, point.y);
-            if ((ve - v) ** 2 + (we - w) ** 2 < style.touchRadius ** 2 && i != selected) {
+            if ((ve - v) ** 2 + (we - w) ** 2 < style.touchRadius ** 2) {
                 return i;
             }
         }

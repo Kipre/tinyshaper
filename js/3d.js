@@ -77,7 +77,7 @@ export function show(logicBoard) {
     const gl = canvas.getContext("webgl");
     const programInfo = twgl.createProgramInfo(gl, [vs, fs]);
 
-    const arrays = logicBoard.get3d();
+    const arrays = logicBoard.get3d(30, 5);
     const bufferInfo = twgl.createBufferInfoFromArrays(gl, arrays);
 
     const tex = twgl.createTexture(gl, {

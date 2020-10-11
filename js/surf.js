@@ -1,3 +1,17 @@
+const v3 = (function() {
+    return {
+        sub: (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]],
+        add: (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]],
+        norm: (a) => {
+            const norm = Math.sqrt(a.map(e => e**2).reduce((a, b) => a+b));
+            return a.map(e => e/norm);
+        },
+        cross: (a, b) => [a[1]*b[2] - a[2]*b[1],
+                          a[0]*b[2] - a[2]*b[0],
+                          a[0]*b[1] - a[1]*b[0]]
+    };
+})();
+
 class P {
     x = 0;
     y = 0;
@@ -26,6 +40,10 @@ class P {
         return new P({x: this.x * a, y: this.y * b});
     }
 
+    norm() {
+        return Math.sqrt(this.x**2 + this.y**2);
+    }
+
     at(i) {
         return [this.x, this.y][i];
     }
@@ -51,8 +69,19 @@ class BezierCurve {
         return acc;
     }
 
-    project(nbPoints = 50) {
-        return [...Array(nbPoints)].map((e, i) => this.evaluate(i / nbPoints));
+    project(nbPoints = 50, normal = false) {
+        return [...Array(nbPoints)].map((e, i) => {
+            const p = this.evaluate(i / nbPoints);
+            return normal? [p, this.normal(i / nbPoints)]: p;
+        });
+    }
+
+    normal(t) {
+        const opp = 1 - t;
+        let acc = this.b.add(this.a.mul(-1)).mul(3*opp*opp);
+        acc = acc.add(this.c.add(this.b.mul(-1)).mul(6*t*opp));
+        acc = acc.add(this.d.add(this.c.mul(-1)).mul(3*t*t));
+        return P.fromPair(-acc.y, acc.x).mul(1/acc.norm());
     }
 
     get points() {
@@ -124,10 +153,10 @@ class BezierPath {
         }
         throw new Error('Containing curve not found');}
 
-    get(x, axis = 0) {
+    get(x, axis = 0, normal = false) {
         const [curve, ] = this.containingCurve(x, axis);
         const t = curve.getT(x, axis);
-        return curve.evaluate(t)
+        return normal? curve.normal(t): curve.evaluate(t);
     }
 
     addPoint(x, axis = 0) {
@@ -147,10 +176,10 @@ class BezierPath {
         return result;
     }
 
-    project(nbPoints = 10) {
+    project(nbPoints = 10, normal = false) {
         var result = [];
         this.curves.forEach((curve) => {
-            result.push(...curve.project(nbPoints))
+            result.push(...curve.project(nbPoints, normal))
         });
         return result;
     }
@@ -214,7 +243,6 @@ export class Board {
         this.thickness = board['thickness'];
         this.x_cut = board['z'][6].x;
         this.x0_cut = board['z'][3].x;
-        this.continuity = board['continuity'];
 
         this.yUp.addPoint(this.x0_cut);
         this.yDown.addPoint(this.x0_cut);
@@ -268,86 +296,74 @@ export class Board {
         return (1 - Math.cos(Math.PI * x))/2
     }
     
-    get3d(slices=30, nbPoints=15) {
+    get3d(nbSlices=30, nbPoints=15) {
         let points;
 
-        const xs = Array.from({length: slices}, (x, i) => this.distribute(i/(slices - 1)));
+        const xs = Array.from({length: nbSlices}, (x, i) => this.distribute(i/(nbSlices - 1)));
         
         const normal = [],
             indices = [],
             position = [];
-
-        const allPoints = [];
+        
         for (const x of xs) {
             points = this.getFullCut(x).project(nbPoints);
-            allPoints.push(...points.map((p) => [p.x, p.y, x]));
-        }
-        const nbPointsPerSlice = points.length;
-        for (const p of allPoints) {
-            const [a, b, c] = p;
-            position.push(a * this.width, b * this.thickness, c * this.length - this.length / 2);
-        }
-        
-        let i, j, k;
-        for (let slice=0; slice<slices-1; slice++) {
-            for (let n=1; n<=nbPointsPerSlice; n++) {
-                const m = (n != nbPointsPerSlice)? n+1 : 1;
-                indices.push(i = n + nbPointsPerSlice * slice,
-                             k = n + nbPointsPerSlice * (slice + 1) , 
-                             j = m + nbPointsPerSlice * slice);
-                indices.push(m + nbPointsPerSlice * slice, 
-                             n + nbPointsPerSlice * (slice + 1), 
-                             m + nbPointsPerSlice * (slice + 1));
-                const a = position.slice(i*3, i*(3 + 1));
-                const b = position.slice(j*3, j*(3 + 1));
-                const c = position.slice(k*3, k*(3 + 1));
-                const u = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
-                const v = [c[0] - a[0], c[1] - a[1], c[2] - a[2]];
-                normal.push(u[1]*v[2] - u[2]*v[1],
-                            u[0]*v[2] - u[2]*v[0],
-                            u[0]*v[1] - u[1]*v[0]);
+            for (const p of points) {
+                position.push([p.x* this.width, p.y* this.thickness, x* this.length - this.length / 2]);
             }
         }
 
+        const fNormal = (a, b, c) => {
+            const [u, v] = [v3.sub(position[b], position[a]),
+                            v3.sub(position[c], position[b])];
+            return v3.cross(u, v);
+        }
 
-
+        const nbPointsPerSlice = points.length;
+        const lastBatchOfNormals = [];
+        for (let s=0; s<nbSlices-1; s++) {
+            for (let p=0; p<nbPointsPerSlice; p++) {
+                const np = (p+1) % nbPointsPerSlice; // next point in the slice
+                const [a, b, c, d] = [nbPointsPerSlice*s + p, nbPointsPerSlice*s + np, 
+                                      nbPointsPerSlice*(s+1) + p, nbPointsPerSlice*(s+1) + np,]
+                indices.push(a, c, d, a, d, b);
+                normal.push(...fNormal(a, b, d));
+                if (s == nbSlices-2) {
+                    lastBatchOfNormals.push(...fNormal(a, d, c))
+                }
+            }
+        }
+        normal.push(...lastBatchOfNormals);
+        
         return {
             indices: indices, 
-            position: position, 
-            normal:normal
+            position: position.flat(), 
+            normal: normal
         };
     }
 
-    getOBJ(slices=30, nbPoints=15) {
+    getOBJ(nbSlices=30, nbPoints=15, withNormals = true) {
 
-        const xs = Array.from({length: slices}, (x, i) => this.distribute(i/(slices - 1)));
-        
+        const arrays = this.get3d2(nbSlices, nbPoints);
+                
         let result = 'o board',
-            verticles = '\n',
+            vertices = '\n',
             indexes = '\n',
-            points;
+            normals = '\n';
 
-        const allPoints = []
-        for (const x of xs) {
-            points = this.getFullCut(x).project(nbPoints);
-            allPoints = [...allPoints, ...points.map((p) => [p.x, p.y, x])]
+        const nbPts = ~~(arrays.position.length / 3)
+        for (let k=0; k<nbPts; k++) {
+            const [a, b, c] = [3*k, 3*k +1, 3*k + 2];
+            vertices += `\nv ${(arrays.position[a]).toFixed(10)} ${(arrays.position[b]).toFixed(10)} ${(arrays.position[c]).toFixed(10)}`;
+            normals += `\nvn ${(arrays.normal[a]).toFixed(10)} ${(arrays.normal[b]).toFixed(10)} ${(arrays.normal[c]).toFixed(10)}`;
         }
-        const nbPointsPerSlice = points.length;
-        for (const p of allPoints) {
-            const [a, b, c] = p;
-            verticles += `\nv ${(a * this.width).toFixed(10)} ${(b * this.thickness).toFixed(10)} ${(c * this.length).toFixed(10)}`;
+        const nbInd = ~~(arrays.indices.length / 3)
+        for (let k=0; k<nbInd; k++) {
+            const [a, b, c] = [arrays.indices[3*k] + 1, 
+                               arrays.indices[3*k + 1] + 1,
+                               arrays.indices[3*k + 2] + 1];
+            indexes += withNormals? `\nf ${a}//${a} ${b}//${b} ${c}//${c}` : `\nf ${a} ${b} ${c}`;
         }
-
-        for (let slice=0; slice<slices-1; slice++) {
-            for (let i=1; i<=nbPointsPerSlice; i++) {
-                const n = i;
-                const m = (n != nbPointsPerSlice)? n+1 : 1;
-                indexes += ` \nf ${n + nbPointsPerSlice * slice} ${m + nbPointsPerSlice * slice} ${n + nbPointsPerSlice * (slice + 1)}`;
-                indexes += ` \nf ${m + nbPointsPerSlice * slice} ${n + nbPointsPerSlice * (slice + 1)} ${m + nbPointsPerSlice * (slice + 1)}`;
-            }
-        }
-
-        return result + verticles + indexes;
+        return result + vertices + (withNormals? normals: '') + indexes;
     }
 }
 

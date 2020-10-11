@@ -5,7 +5,10 @@ import json
 class BezierCurve:
     
     def __init__(self, points):
-        [self.a, self.b, self.c, self.d] = np.array(points, dtype=np.float64)
+        if isinstance(points[0], np.ndarray):
+            [self.a, self.b, self.c, self.d] = points
+        else:
+            [self.a, self.b, self.c, self.d] = map(lambda o: np.array([o['x'], o['y']], dtype=np.float64), points)
 
     def bounds(self, axis):
         values = self.points()[:, axis]
@@ -18,11 +21,19 @@ class BezierCurve:
                3*t**2 * inv * self.c + \
                t**3 * self.d
 
-    def project(self, nb_points=50):
-        values = np.zeros((nb_points, 2))
-        for i, t in enumerate(np.linspace(0, 1, nb_points)):
-            values[i] = self.evaluate(t)
-        return values
+    def normal(self, t):
+        inv = (1 - t)
+        vec = 3 * inv*inv * (self.b - self.a) + \
+              6 * t * inv * (self.c - self.b) + \
+              3 * t*t * (self.d - self.c)
+        vec = np.array([-vec[1], vec[0]])
+        return vec / np.linalg.norm(vec)
+
+    def project(self, nb_points=50, normals=False):
+        values = []
+        for t in np.linspace(0, 1, nb_points):
+            values.append([self.evaluate(t), self.normal(t)] if normals else self.evaluate(t))
+        return np.array(values)
 
     def points(self):
         return np.array([self.a, self.b, self.c, self.d])
@@ -100,12 +111,12 @@ class BezierPath:
         for k in range((len(points)-1)//3):
             self.curves.append(BezierCurve(points[k*3:(k+1)*3 + 1]))
 
-    def get(self, x, axis=0):
+    def get(self, x, axis=0, normal=False):
         points = []
         for curve in self.curves:
             t = curve.get_t(x, axis)
             if not np.isnan(t):
-                points.append(curve.evaluate(t))
+                points.append(curve.evaluate(t) if not normal else curve.normal(t))
         return points
         
     def add_point(self, x, axis=0):
@@ -146,7 +157,6 @@ class BezierPath:
         other = BezierPath(tmp)
         return other.intercalate(factors, self)
 
-
     def plot(self, ax=None):
         for curve in self.curves:
             curve.plot(ax=ax)
@@ -156,13 +166,13 @@ class BezierPath:
         result.curves = [curve.transform(scale_x, scale_y, translate_x, translate_y) for curve in self.curves]
         return result
 
-    def project(self, nb_points, two_sides=False):
+    def project(self, nb_points, *, two_sides=False, normals=False):
         result = []
         for curve in self.curves:
-            result.extend(curve.project(nb_points))
+            result.extend(curve.project(nb_points, normals=normals))
         if two_sides:
             for curve in self.transform(-1, 1, 0, 0).reversed().curves:
-                result.extend(curve.project(nb_points))
+                result.extend(curve.project(nb_points, normals=normals))
         return np.array(result)
 
     def reversed(self):
@@ -185,16 +195,16 @@ class Board:
     def __init__(self, fname):
         with open(fname) as f:
             board = json.loads(f.read())
-        self.x = BezierPath(np.array(board['x'])[:, :2])
-        self.x0 = BezierPath(np.array(board['x0'])[:, :2])
-        self.y_up = BezierPath(np.array(board['y'])[:7, :2])
-        self.y_down = BezierPath(np.flipud(np.array(board['y']))[:7, :2])
-        self.z = BezierPath(np.array(board['z'])[:, :2])
+        self.x = BezierPath(board['x'])
+        self.x0 = BezierPath(board['x0'])
+        self.y_up = BezierPath(board['y'][:7])
+        self.y_down = BezierPath(list(reversed(board['y'][7:])))
+        self.z = BezierPath(board['z'])
         self.length = board['length']
         self.width = board['width']
         self.thickness = board['thickness']
-        self.x_cut = np.array(board['z'])[6, 0]
-        self.x0_cut = np.array(board['z'])[3, 0]
+        self.x_cut = board['z'][6]['x']
+        self.x0_cut = board['z'][3]['x']
 
         self.y_up.add_point(self.x0_cut)
         self.y_down.add_point(self.x0_cut)
@@ -213,8 +223,9 @@ class Board:
             path.plot()
 
     def get_cut(self, x):
-        result = np.zeros((len(self.x.points()), 2))
-        for i, val in enumerate(result):
+        length = len(self.x.points())
+        result = np.zeros((length, 2))
+        for i in range(length):
             result[i, 0] = self.z_paths[i].get(x)[0][1]
             result[i, 1] = self.y_paths[i].get(x)[0][1]
         return BezierPath(result)
@@ -230,7 +241,7 @@ class Board:
 
         all_points = []
         for x in xs:
-            points = self.get_cut(x).project(points_per_curve, True)
+            points = self.get_cut(x).project(points_per_curve, two_sides=True)
             all_points.extend(np.c_[points, np.full(len(points), x)] * np.array([self.width, self.thickness, self.length]))
         all_points = np.array(all_points)
 
