@@ -1,7 +1,11 @@
-# Surf - free prototyping/shaping tools
+# [Surf](https://kipre.github.io/surf/) - prototyping/shaping tools
 
 This is a personal project that was initially intended to help with the shaping of a DIY board.
 Although the existing computer-assisted shaping tools work well and provide a lot of flexibility they are all proprietary and the really low-level features are unaccessible.
+
+## Python and JS
+
+The idea is to have a high-level GUI web-app to shape the board and then to have a Python API to retieve the necessary cuts and projections with more control.
 
 ## IO format: `board.json`
 
