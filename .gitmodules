@@ -1,0 +1,6 @@
+[submodule "test/surf"]
+	path = test/surf
+	url = https://github.com/Kipre/surf
+[submodule "test/brotest"]
+	path = test/brotest
+	url = https://github.com/Kipre/brotest
