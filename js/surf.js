@@ -1,4 +1,4 @@
-const v3 = (function() {
+export const v3 = (function() {
     return {
         sub: (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]],
         add: (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]],
@@ -12,7 +12,7 @@ const v3 = (function() {
     };
 })();
 
-class P {
+export class P {
     x = 0;
     y = 0;
 
@@ -51,7 +51,7 @@ class P {
 }
 
 
-class BezierCurve {
+export class BezierCurve {
 
     constructor(points) {
         this.a = new P(points[0]);
@@ -134,7 +134,7 @@ class BezierCurve {
 }
 
 
-class BezierPath {
+export class BezierPath {
 
     curves = [];
     index = 0;
@@ -365,11 +365,4 @@ export class Board {
         }
         return result + vertices + (withNormals? normals: '') + indexes;
     }
-}
-
-if ((typeof process !== 'undefined') && (process.release.name === 'node')) {
-    module.exports.P = P;
-    module.exports.BezierPath = BezierPath;
-    module.exports.BezierCurve = BezierCurve;
-    module.exports.Board = Board;
 }
