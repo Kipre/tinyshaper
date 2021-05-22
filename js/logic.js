@@ -1,8 +1,8 @@
-import * as ui from './ui.js';
-import * as surf from './surf.js';
-import * as trid from './3d.js';
+import*as ui from './ui.js';
+import*as surf from './surf.js';
+import*as trid from './3d.js';
 
-fetch('../board.json').then(res=>res.json()).then(board=>{
+fetch('board.json').then(res=>res.json()).then(board=>{
     let editorView = true;
     let stop;
     const logicBoard = new surf.Board(board);
