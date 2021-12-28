@@ -366,3 +366,92 @@ export class Board {
         return result + vertices + (withNormals? normals: '') + indexes;
     }
 }
+
+// math-inlining.
+const { abs, cos, sin, acos, atan2, sqrt, pow, PI } = Math;
+
+// cube root function yielding real roots
+function crt(v) {
+  return v < 0 ? -pow(-v, 1 / 3) : pow(v, 1 / 3);
+}
+
+/**
+ * Find a t for a given x or y
+ * https://github.com/Pomax/BezierInfo-2/blob/b479e2aa867d1321200951cc13a025a8701f94c6/docs/js/graphics-element/lib/bezierjs/bezier.js#L504 
+ */
+export function roots(points, {x, y}) {
+    let target, pa, pb, pc, pd;
+    if (x !== undefined) {
+        [pa, pb, pc, pd] = points.map(({x, y}) => x);
+        target = x;
+    } else if (y !== undefined) {
+        [pa, pb, pc, pd] = points.map(({x, y}) => y);
+        target = y;
+    } else {
+        throw new Error('No target provided');
+    }
+
+    const inUnitInterval = t => 0 <= t && t <= 1;
+
+    let d = -pa + 3 * pb - 3 * pc + pd,
+    a = 3 * pa - 6 * pb + 3 * pc,
+    b = -3 * pa + 3 * pb,
+    c = pa - target;
+
+
+
+    if (abs(d - 0) < 0.000001) {
+      // this is not a cubic curve.
+      if (abs(a - 0) < 0.000001) {
+        // in fact, this is not a quadratic curve either.
+        if (abs(b - 0) < 0.000001) {
+          // in fact in fact, there are no solutions.
+          return [];
+      }
+        // linear solution:
+        return [-c / b].filter(inUnitInterval);
+    }
+      // quadratic solution:
+      const q = sqrt(b * b - 4 * a * c),
+      a2 = 2 * a;
+      return [(q - b) / a2, (-b - q) / a2].filter(inUnitInterval);
+  }
+
+    // at this point, we know we need a cubic solution:
+
+    a /= d;
+    b /= d;
+    c /= d;
+
+    const p = (3 * b - a * a) / 3,
+    p3 = p / 3,
+    q = (2 * a * a * a - 9 * a * b + 27 * c) / 27,
+    q2 = q / 2,
+    discriminant = q2 * q2 + p3 * p3 * p3;
+
+    let u1, v1, x1, x2, x3;
+    if (discriminant < 0) {
+      const mp3 = -p / 3,
+      mp33 = mp3 * mp3 * mp3,
+      r = sqrt(mp33),
+      t = -q / (2 * r),
+      cosphi = t < -1 ? -1 : t > 1 ? 1 : t,
+      phi = acos(cosphi),
+      crtr = crt(r),
+      t1 = 2 * crtr;
+      x1 = t1 * cos(phi / 3) - a / 3;
+      x2 = t1 * cos((phi + 2 * PI) / 3) - a / 3;
+      x3 = t1 * cos((phi + 4 * PI) / 3) - a / 3;
+      return [x1, x2, x3].filter(inUnitInterval);
+  } else if (discriminant === 0) {
+      u1 = q2 < 0 ? crt(-q2) : -crt(q2);
+      x1 = 2 * u1 - a / 3;
+      x2 = -u1 - a / 3;
+      return [x1, x2].filter(inUnitInterval);
+  } else {
+      const sd = sqrt(discriminant);
+      u1 = crt(-q2 + sd);
+      v1 = crt(q2 + sd);
+      return [u1 - v1 - a / 3].filter(inUnitInterval);
+  }
+}
