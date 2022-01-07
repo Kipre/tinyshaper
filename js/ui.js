@@ -1,405 +1,246 @@
-const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-const style = {
-    parentPointFill: dark ? '#9d9d9d' : '#b8b8b8',
-    childPointFill: dark ? '#b800b8' : '#b800b8',
-    pointStroke: '#000000',
-    selectedPointStroke: '#a13939',
-    outlineFill: dark ? '#4f4040' : '#bbe7fd',
-    outlineStroke: dark ? '#53948f' : '#1e4a5f',
-    pointStrokeWidth: 1,
-    touchRadius: 7,
-    visibleRadius: 5,
-    floatPrecision: 2
-};
-const dpi = window.devicePixelRatio;
-const round = (x)=>Math.round(x * 10 ** style.floatPrecision) / 10 ** style.floatPrecision
+import {roots, siblingPosition} from './surf.js';
 
-function setBoardDimsControls(board) {
-    document.getElementById('dims-control').setDims(board);
+const config = {
+    pointStrokeWidth: 1,
+    selectRadius: 7,
+    pointRadius: 4,
+    floatPrecision: 2,
+    padding: 20,
+}
+
+const state = {
+    profile: 'z',
+    pivoted: false
 }
 
 export function setup(board, logicBoard) {
 
-    setBoardDimsControls(board);
-
-    const parent = document.getElementById('canvases');
-    parent.textContent = '';
-    const width = parent.offsetWidth - 3
-      , height = (parent.offsetHeight / 3) - 5;
-
-    const canvas_obj = {};
-    for (let args of [['z', board.length, board.width, (window.innerHeight / 2.5) - 5, width, true],
-                      ['y', board.length, board.thickness, (window.innerHeight / 4) - 5, width, false],
-                      ['x0', logicBoard.x0Width, logicBoard.x0Thickness, height, (logicBoard.x0Width/(logicBoard.x0Width + board.width))*width - 1, false],
-                      ['x', board.width, board.thickness, height, (board.width/(logicBoard.x0Width + board.width))*width - 1, false]]) {
-        const profile = args[0];
-        canvas_obj[profile] = document.createElement('canvas');
-        parent.appendChild(canvas_obj[profile]);
-        args[0] = board[profile];
-        setupPanel(canvas_obj[profile], ...args);
-
+    const profiles = {
+        'z': {
+            width: board.length,
+            height: board.width,
+        },
+        'y': {
+            width: board.length,
+            height: board.width,
+        },
+        'x': {
+            width: board.width,
+            height: board.thickness,
+        },
+        'x0': {
+            height: (roots(board.yDown, {
+                x: board.z[3].x
+            })[0] - roots(board.yUp, {
+                x: board.z[3].x
+            })[0]) * board.thickness,
+            width: board.z[3].y * board.width
+        }
     }
 
-}
+    document.getElementById('dims-control').setDims(board);
 
+    const {width, height} = profiles[state.profile];
+    const points = board[state.profile];
+    let scaledPoints;
 
+    let xScale, yScale;
 
+    const svg = d3.select("#vis")
+    .call(svg=>svg
+        .append("path")
+        .attr("class", "u-path"));
 
+    const bottomAxis = svg.append('g');
+    const leftAxis = svg.append('g');
+    let scale = ({x, y})=>({x, y})
+    , unscale = scale;
 
-function setupPanel(canvas, pts, objectWidth, objectHeight, height, width, full) {
+    draggable();
 
-    canvas.width = width;
-    canvas.height = height;
+    function updateViewport() {
+        const {clientWidth, clientHeight} = svg.node();
+        const {padding} = config;
+        // if (clientWidth > clientHeight) {
+            [state.pivoted, xScale] = [false, clientWidth - 2*padding];
+        // } else {
+        // [state.pivoted, xScale] = [true, clientHeight];
+        // }
+        yScale = xScale * (height / width);
+        const half = clientHeight / 2
 
-    const context = canvas.getContext('2d');
-    const [xFactor,xTranslation,yFactor,yTranslation] = affineCoeficients(objectWidth, objectHeight, width, height);
-
-    // No selected point
-    let selected = -1;
-    let dragging = false;
-
-    renderUI(pts, context, canvas);
-
-    canvas.onmousedown = e=>{
-        selected = touchesSomething(e.offsetX, e.offsetY, pts, selected);
-        dragging = (selected >= 0);
-        const event = new CustomEvent('pointselected',{
-            bubbles: true,
-            detail: {
-                point: pts[selected],
-                move: (d, axis)=>{
-                    const move = (axis == 'x') ? [d, 0] : [0, d]
-                    movePoint(...move, selected, pts)
-                    renderUI(pts, context, canvas);
-                }
-            }
+        // bottomAxis.attr("transform", `translate(0, ${yScale * 1.1})`).call(d3.axisBottom(d3.scaleLinear().range([0, xScale]).domain([0, length])).ticks())
+        scale = ({x, y})=>({
+            x: x * xScale + padding,
+            y: y * yScale + half
         });
-        canvas.dispatchEvent(event);
-        // For the selected point to dissapear
-        renderUI(pts, context, canvas);
+        unscale = ({x, y})=>({
+            x: (x - padding) / xScale,
+            y: (y - half) / yScale
+        });
+        update();
     }
 
-    canvas.onmousemove = e=>{
-        if (dragging && e.target == canvas) {
-            movePoint(...incrementsFromUI(e.movementX, e.movementY), selected, pts)
-            // Let UI know that the point moves
-            const event = new Event('pointmove');
-            document.dispatchEvent(event);
-            renderUI(pts, context, canvas);
-            return;
-        } else {
-            dragging = false;
-            if (touchesSomething(e.offsetX, e.offsetY, pts, selected) >= 0) {
-                canvas.style.cursor = 'pointer';
-            } else {
-                canvas.style.cursor = 'default';
+
+    function update() {
+        scaledPoints = points.map(scale);
+        const quads = Array.from({
+            length: (points.length - 1) / 3
+        }, (_,i)=>i * 3).map(i=>scaledPoints.slice(i, i + 4));
+
+        const path = d3.path();
+        const [{x, y}] = scaledPoints;
+        path.moveTo(x, y);
+        quads.forEach(([,{x: cp1x, y: cp1y},{x: cp2x, y: cp2y},{x, y}])=>path.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, x, y));
+
+        svg.select(".u-path").attr("d", path);
+
+        svg.selectAll(".u-point")
+        .data(scaledPoints)
+        .join(enter=>enter
+            .append("g")
+            .classed("u-point", true)
+            .call(g=>g
+                .append("circle")
+                .attr("r", config.pointRadius)))
+        .attr("transform", ({x, y})=>`translate(${[x, y]})`);
+
+        svg.selectAll(".u-line").data(quads.flatMap(([from,to,from1,to1])=>[{
+            from,
+            to
+        }, {
+            from: from1,
+            to: to1
+        }])).join("line").attr("x1", ({from})=>from.x).attr("y1", ({from})=>from.y).attr("x2", ({to})=>to.x).attr("y2", ({to})=>to.y).classed("u-line", true);
+    }
+
+    function draggable() {
+        updateViewport();
+
+        function dragSubject(event) {
+            const [px, py] = d3.pointer(event.sourceEvent, svg.node());
+            const dist = m=>Math.sqrt((px - m.x) ** 2 + (py - m.y) ** 2)
+            const idx = d3.minIndex(scaledPoints, dist);
+            if (dist(scaledPoints[idx]) > config.selectRadius) {
+                svg.style("cursor", null);
+                return null;
             }
-        }
-    }
-    ;
-
-    canvas.onmouseup = e=>{
-        dragging = false;
-    }
-    ;
-
-    document.addEventListener('continuitytoggle', (e)=>{
-        if (selected >= 0) {
-            activeFamily(selected, pts).forEach((e)=>{e.continuity ^= true;})
-            movePoint(0, 0, selected, pts);
-            renderUI(pts, context, canvas);
-        }
-    }
-    );
-
-    document.addEventListener('pointselected', (e)=>{
-        if (e.target != canvas) {
-            selected = -1
-            renderUI(pts, context, canvas);
-        }
-    }
-    );
-
-    function affineCoeficients(objectWidth, objectHeight, width, height) {
-        const zoom = Math.min(0.9 * width / objectWidth, 0.8 * height / objectHeight);
-        const xFactor = objectWidth * zoom;
-        const yFactor = -objectHeight * zoom;
-        const xTranslation = (width - xFactor) / 2;
-        const yTranslation = (height - yFactor) / 2;
-        return [xFactor, xTranslation, yFactor, yTranslation];
-    }
-
-    function toUI(a, b) {
-        return [a * xFactor + xTranslation, yFactor * b + yTranslation]
-    }
-
-    function fromUI(a, b) {
-        return [(a - xTranslation) / xFactor, (b - yTranslation) / yFactor];
-    }
-
-    function incrementsFromUI(da, db) {
-        return [da / xFactor, db / yFactor];
-    }
-
-    /**
-     * Checks if a point is currently being manipulated.
-     * @param {number} v X coordinate of the click event with respect to the canvas.
-     * @param {number} w Y coordinate.
-     * @param {Array} pts Array of currenty plotted points.
-     * @return {number} Returns -1 if there is no match, otherwise returns the index of the matched point.
-     */
-    function touchesSomething(v, w, pts, selected) {
-        for (const [i,point] of pts.entries()) {
-            const [ve,we] = toUI(point.x, point.y);
-            if ((ve - v) ** 2 + (we - w) ** 2 < style.touchRadius ** 2) {
-                return i;
+            svg.style("cursor", "hand").style("cursor", "grab");
+            const {continuous, freezeX, freezeY} = points[idx];
+            const move = (point, dx, dy) => {
+                point.x += (dx / xScale) * !freezeX;
+                point.y += (dy / yScale) * !freezeY;
             }
-        }
-        return -1;
-    }
-
-    /**
-     * Draws the board outline.
-     * @param {Array} pts Profile array of points
-     * @param {2DContext} context Canvas drawing context
-     */
-    function drawOutline(pts, ctx) {
-        ctx.beginPath();
-        ctx.fillStyle = style.outlineFill;
-        ctx.strokeStyle = style.outlineStroke;
-        ctx.moveTo(...toUI(pts[0].x, pts[0].y));
-        let i = 1;
-        while (i < pts.length) {
-            if (pts[i].number >= 0) {
-                ctx.lineTo(...toUI(pts[i].x, pts[i].y));
-                i++;
-            } else {
-                ctx.bezierCurveTo(...toUI(pts[i].x, pts[i].y), ...toUI(pts[i + 1].x, pts[i + 1].y), ...toUI(pts[i + 2].x, pts[i + 2].y));
-                i += 3;
+            let direction, sibling;
+            if (continuous !== undefined) {
+                return (dx, dy) => {
+                    for (let i=-1; i <= 1; i++) {
+                        move(points[idx + i], dx, dy);
+                    }
+                }
+            } else if (points[idx - 1]?.continuous) {
+                direction = -1;
+            } else if (points[idx + 1]?.continuous) {
+                direction = 1;
             }
-        }
-        if (full) {
-            i = pts.length - 2
-            while (i > 0) {
-                if (pts[i].number >= 0) {
-                    ctx.lineTo(...toUI(pts[i].x, -pts[i].y));
-                    i--;
-                } else {
-                    ctx.bezierCurveTo(...toUI(pts[i].x, -pts[i].y), ...toUI(pts[i - 1].x, -pts[i - 1].y), ...toUI(pts[i - 2].x, -pts[i - 2].y));
-                    i -= 3;
+            if (sibling = points[idx + (2 * direction)]) {
+                return (dx, dy) => {
+                    move(points[idx], dx, dy);
+                    Object.assign(sibling, siblingPosition(points[idx], points[idx + direction], sibling, xScale, yScale));
                 }
             }
-        }
-        ctx.closePath()
-        ctx.fill();
-        ctx.stroke();
-    }
-
-    function drawPoint(point, ctx) {
-        ctx.beginPath();
-        const [a,b] = toUI(point.x, point.y);
-        ctx.moveTo(a + style.visibleRadius, b);
-        ctx.arc(a, b, style.visibleRadius, 0, 2 * Math.PI);
-
-        ctx.fill();
-        ctx.stroke();
-    }
-
-    /** Transformation presque astucieuse */
-    function parentInc(point) {
-        return (point.number < 0) ? -2 * point.number - 3 : 0;
-    }
-
-    function sibling(selected, pts) {
-        if (pts[selected].number < 0) {
-            return pts[selected + 2 * parentInc(pts[selected])];
-        }
-        return null;
-    }
-
-    function parent(selected, pts) {
-        if (selected >= 0) {
-            return pts[selected + parentInc(pts[selected])];
-        }
-        return null;
-    }
-
-    function activeFamily(selected, pts) {
-        if (selected >= 0) {
-            const parentIndex = selected + parentInc(pts[selected]);
-            const family = [pts[parentIndex]];
-            if (pts[parentIndex - 1]?.number < 0) {
-                family.unshift(pts[parentIndex - 1]);
-            }
-            if (pts[parentIndex + 1]?.number < 0) {
-                family.push(pts[parentIndex + 1]);
-            }
-            return family;
-        }
-        return [];
-    }
-
-    function drawPoints(pts, ctx) {
-        for (const [i,point] of pts.entries()) {
-            if (point.number >= 0) {
-                ctx.fillStyle = style.parentPointFill;
-                ctx.strokeStyle = (i == selected) ? style.selectedPointStroke : style.pointStroke;
-                drawPoint(point, ctx);
-            } else if (i + parentInc(point) == selected) {
-                ctx.fillStyle = style.childPointFill;
-                ctx.strokeStyle = style.pointStroke;
-                drawPoint(point, ctx);
-            } else if (i == selected) {
-                ctx.fillStyle = style.childPointFill;
-                ctx.strokeStyle = style.selectedPointStroke;
-                drawPoint(point, ctx);
-                const brother = sibling(i, pts);
-                if (brother) {
-                    ctx.fillStyle = style.childPointFill;
-                    ctx.strokeStyle = style.pointStroke;
-                    drawPoint(brother, ctx);
-                }
-            }
-        }
-    }
-
-    function drawLines(selected, pts, ctx) {
-        if (selected >= 0) {
-            const family = activeFamily(selected, pts);
-            ctx.strokeStyle = style.pointStroke;
-            ctx.beginPath();
-            const first = family.shift();
-            ctx.moveTo(...toUI(first.x, first.y));
-            for (const member of family) {
-                ctx.lineTo(...toUI(member.x, member.y))
-            }
-            ctx.stroke()
+            return (dx, dy) => move(points[idx], dx, dy);
         }
 
+        svg.on("mousemove", event=>dragSubject({sourceEvent: event})).call(d3.drag().subject(dragSubject)
+            .on("start", ({subject})=>subject && svg.style("cursor", "grabbing"))
+            .on("drag", ({subject, dx, dy})=>subject(dx, dy))
+            .on("end", ()=>svg.style("cursor", "grab"))
+            .on("start.render drag.render end.render", update));
     }
 
-    function renderUI(pts, context, canvas) {
-        context.clearRect(0, 0, canvas.width, canvas.height);
-        drawOutline(pts, context);
-        drawLines(selected, pts, context);
-        drawPoints(pts, context);
-    }
-
-    function movePoint(dx, dy, selected, pts) {
-        const point = pts[selected]
-        // Assuming the point is selected
-        const [incX,incY] = [dx * point.freedomX, dy * point.freedomY]
-        point.x += incX;
-        point.y += incY;
-        if (point.number >= 0) {
-            const [precPoint,nextPoint] = [pts[selected - 1], pts[selected + 1]]
-            if (precPoint?.number < 0) {
-                precPoint.x += incX;
-                precPoint.y += incY;
-            }
-            if (nextPoint?.number < 0) {
-                nextPoint.x += incX;
-                nextPoint.y += incY;
-            }
-        } else {
-            // In case we are moving through continuity
-            const sister = sibling(selected, pts);
-            if (sister) {
-                const parent = pts[selected + parentInc(point)];
-                if (parent.continuity) {
-                    const [parV,parW] = toUI(parent.x, parent.y);
-                    const [sisV,sisW] = toUI(sister.x, sister.y);
-                    const [poiV,poiW] = toUI(point.x, point.y);
-                    const norm = Math.sqrt((parV - sisV) ** 2 + (parW - sisW) ** 2);
-                    const alpha = -Math.atan((poiV - parV) / (poiW - parW)) + ((poiW - parW) >= 0) * Math.PI + Math.PI / 2;
-                    [sister.x,sister.y] = fromUI(norm * Math.cos(alpha) + parV, norm * Math.sin(alpha) + parW);
-                }
-            }
-        }
-    }
-
+    window.onresize = updateViewport;
 }
-
 
 const diyElementsStyle = `
-    
-
-    input, .box {
-        text-align:center;
-        border-radius: 5px;
-        width: 70px;
-        margin: 2px;
-        font-size: 15px;
-        font-weight: 500;
-        display: inline-block;
-        float: left;
-    }
-
-    .box {
-        cursor: pointer;
-        width: 74px;
-        position: relative;
-        background: #ffffff;
-        color: #000000;
-        padding: 3px 2px;
-    }
-
-    .switch {   
-        position: absolute;
-        z-index: 10;
-        left: 0px;
-        top: 0px;
-        width: 35px;
-        height: 20px;
-        background: rgb(248 248 248 / 0%);
-        border-width: 2px;
-        border-style: inset;
-        border-color: rgb(118, 118, 118);
-        border-radius: 5px;
-        transition: .2s;
-    }
-
-    .checked > .switch {
-        transform: translateX(39px);
-    }
-
-    .disabled > .switch {
-        border-color: rgba(118, 118, 118, 0);
-        transition: 0s;
-    }
-
-    .disabled {   
-        background: rgba(239, 239, 239, 0.3);
-        color: rgb(110 110 110);
-        transition: .2s;
-        border-style: inset;
-        border-color: rgba(118, 118, 118, 0.3);
-        border-width: 2px;
-        padding: 1px 0px;
-        transition: .0s;
-    }
 
 
-    .container {
-        height: 30px;
-    }
+input, .box {
+    text-align:center;
+    border-radius: 5px;
+    width: 70px;
+    margin: 2px;
+    font-size: 15px;
+    font-weight: 500;
+    display: inline-block;
+    float: left;
+}
 
-    input[type='submit'] {
-        position: absolute; 
-        left: -200px;
-    }
+.box {
+    cursor: pointer;
+    width: 74px;
+    position: relative;
+    background: #ffffff;
+    color: #000000;
+    padding: 3px 2px;
+}
 
-    label{
-        display: inline-block;
-        float: left;
-        clear: left;
-        width: 100px;
-        font-size: 14px;
-        text-align: right;
-        padding: 4px;
-    }
+.switch {   
+    position: absolute;
+    z-index: 10;
+    left: 0px;
+    top: 0px;
+    width: 35px;
+    height: 20px;
+    background: rgb(248 248 248 / 0%);
+    border-width: 2px;
+    border-style: inset;
+    border-color: rgb(118, 118, 118);
+    border-radius: 5px;
+    transition: .2s;
+}
 
-    @media (prefers-color-scheme: dark) {
+.checked > .switch {
+    transform: translateX(39px);
+}
+
+.disabled > .switch {
+    border-color: rgba(118, 118, 118, 0);
+    transition: 0s;
+}
+
+.disabled {   
+    background: rgba(239, 239, 239, 0.3);
+    color: rgb(110 110 110);
+    transition: .2s;
+    border-style: inset;
+    border-color: rgba(118, 118, 118, 0.3);
+    border-width: 2px;
+    padding: 1px 0px;
+    transition: .0s;
+}
+
+
+.container {
+    height: 30px;
+}
+
+input[type='submit'] {
+    position: absolute; 
+    left: -200px;
+}
+
+label{
+    display: inline-block;
+    float: left;
+    clear: left;
+    width: 100px;
+    font-size: 14px;
+    text-align: right;
+    padding: 4px;
+}
+
+@media (prefers-color-scheme: dark) {
     input, .box {
         background: #5c585d;
         color: #e8dbc6;
@@ -417,8 +258,6 @@ const diyElementsStyle = `
     }
 }
 `;
-
-
 
 customElements.define('dim-input', class extends HTMLElement {
     constructor() {
@@ -480,14 +319,14 @@ customElements.define('dim-input', class extends HTMLElement {
 customElements.define('dims-input', class extends HTMLElement {
 
     board;
-    
+
     constructor() {
         super();
 
         const shadowRoot = this.attachShadow({
             mode: 'open'
         });
-        
+
         const form = document.createElement('form');
         const style = document.createElement('style');
         style.textContent = diyElementsStyle;
@@ -510,11 +349,10 @@ customElements.define('dims-input', class extends HTMLElement {
             div.appendChild(input);
 
         }
-        
+
         const submit = document.createElement('input');
         submit.setAttribute('type', 'submit')
         form.appendChild(submit)
-
 
         form.addEventListener('submit', e=>{
             e.preventDefault();
@@ -533,10 +371,11 @@ customElements.define('dims-input', class extends HTMLElement {
             this.inputs[dim].value = board[dim];
         }
     }
-});
+}
+);
 
 customElements.define('toggle-switch', class extends HTMLElement {
-    
+
     constructor() {
         super();
 
@@ -550,7 +389,7 @@ customElements.define('toggle-switch', class extends HTMLElement {
         this.left = this.getAttribute('left');
         this.right = this.getAttribute('right');
         this.event = this.getAttribute('event');
-        
+
         const div = document.createElement('div');
         div.classList.add('container');
         const label = document.createElement('label');
@@ -566,7 +405,6 @@ customElements.define('toggle-switch', class extends HTMLElement {
         switsh.style.height = boxHeight - 4;
         switsh.style.width = 33;
 
-
         const css = document.createElement('style');
 
         css.textContent = diyElementsStyle;
@@ -580,12 +418,12 @@ customElements.define('toggle-switch', class extends HTMLElement {
 
         label.innerText = this.name;
 
-        this.box.onclick = () => {
+        this.box.onclick = ()=>{
             this.box.classList.toggle('checked');
             const event = new Event(this.event);
             document.dispatchEvent(event);
         }
-        
+
     }
 
     disable() {
@@ -604,116 +442,16 @@ customElements.define('toggle-switch', class extends HTMLElement {
         this.box.classList.remove('checked');
     }
 
-});
+}
+);
 
 document.addEventListener('pointselected', (e)=>{
     const tog = document.getElementById('continuityswitch');
     if (e.detail?.point) {
         tog.enable();
-        (e.detail.point.continuity)? tog.uncheck(): tog.check();
+        (e.detail.point.continuity) ? tog.uncheck() : tog.check();
     } else {
         tog.disable();
     }
 }
 );
-
-const svg = (function() {
-  const ns = "http://www.w3.org/2000/svg";
-  function drawCont() {
-    const img = document.createElementNS(ns, "svg");
-    img.setAttribute('width', '41px');
-    img.setAttribute('height', '41px');
-    const [a, b, c] = [[5, 5], [15, 35], [35, 25]];
-    const [a1, b1, c1] = [[5, 5], [35, 35], [22, 22]];
-
-    img.appendChild(mkAnimLine(...a, ...c, ...a1, ...c1));
-    img.appendChild(mkAnimLine(...c, ...b, ...c1, ...b1));
-    img.appendChild(mkAnimCircle(...a, ...a1, style.childPointFill));
-    img.appendChild(mkAnimCircle(...b, ...b1, style.childPointFill));
-    img.appendChild(mkAnimCircle(...c, ...c1, style.parentPointFill));
-
-    return img;
-  }
-
-  function mkAnimCircle(x, y, x1, y1, fillColor) {
-        const circle = mkCircle(x, y, style.visibleRadius, style.pointStroke, fillColor);
-        circle.appendChild(mkAnim('cx', x, x1));
-        circle.appendChild(mkAnim('cy', y, y1));
-        return circle;
-    }    
-
-    function mkAnimLine(x, y, x1, y1, x2, y2, x3, y3) {
-      const line = mkLine(x, y, x1, y1);
-      line.appendChild(mkAnim('x1', x, x2));
-      line.appendChild(mkAnim('y1', y, y2));
-      line.appendChild(mkAnim('x2', x1, x3));
-      line.appendChild(mkAnim('y2', y1, y3));
-      return line;
-    }
-
-    function mkLine(x1, y1, x2, y2) {
-        const line = document.createElementNS(ns, "line");
-        line.setAttribute('x1', x1);
-        line.setAttribute('y1', y1);
-        line.setAttribute('x2', x2);
-        line.setAttribute('y2', y2);
-        line.setAttribute('stroke-width', 1);
-        line.setAttribute('stroke', style.pointStroke);
-        return line;
-    }
-
-    function mkCircle(x, y, r, stroke, fill) {
-        const circle = document.createElementNS(ns, "circle");
-        circle.setAttribute('cx', x);
-        circle.setAttribute('cy', y);
-        circle.setAttribute('r', r);
-        circle.setAttribute('stroke', stroke);
-        circle.setAttribute('stroke-width', 1);
-        circle.setAttribute('fill', fill);
-        return circle;
-    }
-
-    function mkAnim(attr, from, to) {
-        const anim = document.createElementNS(ns, "animate");
-        anim.setAttribute('attributeName', attr);
-        anim.setAttribute('from', from);
-        anim.setAttribute('to', to);
-        anim.setAttribute('dur', "1s");
-        anim.setAttribute('repeatCount', 'indefinite');
-        return anim;
-    }
-            
-    return {drawCont: drawCont}
-})();
-
-const toggleSwitchStyle = `
-
-
-`;
-
-
-// customElements.define('toggle-switch', class extends HTMLElement {
-
-//     state = false;
-    
-//     constructor() {
-//         super();
-
-//         const shadowRoot = this.attachShadow({
-//             mode: 'open'
-//         });
-
-//         const button = document.createElement('button');
-//         button.classList.add("switch");
-//         const img = svg.drawCont()
-//         button.appendChild(img);
-
-//         const style = document.createElement('style');
-//         style.textContent = toggleSwitchStyle;
-//         shadowRoot.appendChild(style);
-
-//         shadowRoot.appendChild(button);
-//     }
-// });
-
-

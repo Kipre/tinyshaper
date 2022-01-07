@@ -22,7 +22,7 @@ body {
     flex-direction: column;
     justify-content: space-between;
     grid-row: 1;
-    grid-column:  1;
+    grid-column: 1;
     background: #fce6ff;
 }
 
@@ -50,7 +50,7 @@ footer {
 
 .content {
     grid-row: 1;
-    grid-column:  2;
+    grid-column: 2;
 }
 
 button {
@@ -79,15 +79,41 @@ profile {
     }
 
     a {
-        color:#85c0f3;
+        color: #85c0f3;
     }
 
     hr {
-        
-    border-top: solid #88718c 1px;
+        border-top: solid #88718c 1px;
     }
 
     .toolbar {
-    background: #332b34;
+        background: #332b34;
+    }
 }
+
+
+svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+svg .u-line {
+  stroke: #aaa;
+  stroke-dasharray: 2 2;
+}
+
+svg .u-path {
+  stroke: orange;
+  fill: none;
+}
+
+svg .u-point circle {
+  fill: #c2ae7b;
+}
+
+svg {
+  text-anchor: middle;
+  font: 11px var(--sans-serif);
+  user-select: none;
 }

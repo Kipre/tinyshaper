@@ -1,9 +1,11 @@
+const { abs, cos, sin, acos, atan2, atan, sqrt, pow, PI } = Math;
+
 export const v3 = (function() {
     return {
         sub: (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]],
         add: (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]],
         norm: (a) => {
-            const norm = Math.sqrt(a.map(e => e**2).reduce((a, b) => a+b));
+            const norm = sqrt(a.map(e => e**2).reduce((a, b) => a+b));
             return a.map(e => e/norm);
         },
         cross: (a, b) => [a[1]*b[2] - a[2]*b[1],
@@ -41,7 +43,7 @@ export class P {
     }
 
     norm() {
-        return Math.sqrt(this.x**2 + this.y**2);
+        return sqrt(this.x**2 + this.y**2);
     }
 
     at(i) {
@@ -93,7 +95,7 @@ export class BezierCurve {
         let [l, h] = [0, 1];
         let m, em, el, eh = 0;
         el = this.evaluate(l).at(axis) - x;
-        while (Math.abs(l - h) > precision) {
+        while (abs(l - h) > precision) {
             m = (l + h) / 2;
             em = this.evaluate(m).at(axis) - x;
             if (em * el > 0) {
@@ -233,10 +235,8 @@ export class Board {
         this.board = board;
         this.x = new BezierPath(board['x']);
         this.x0 = new BezierPath(board['x0']);
-        this.yUp = new BezierPath(board['y'].slice(0, 7));
-        this.yDown = new BezierPath(board['y'].reduce(
-            (acc, ele) => { acc.unshift(ele); return acc }, []
-        ).slice(0, 7));
+        this.yUp = new BezierPath(board['yUp']);
+        this.yDown = new BezierPath(board['yDown']);
         this.z = new BezierPath(board['z']);
         this.length = board['length'];
         this.width = board['width'];
@@ -293,7 +293,7 @@ export class Board {
     }
 
     distribute(x) {
-        return (1 - Math.cos(Math.PI * x))/2
+        return (1 - cos(PI * x))/2
     }
     
     get3d(nbSlices=30, nbPoints=15) {
@@ -366,9 +366,6 @@ export class Board {
         return result + vertices + (withNormals? normals: '') + indexes;
     }
 }
-
-// math-inlining.
-const { abs, cos, sin, acos, atan2, sqrt, pow, PI } = Math;
 
 // cube root function yielding real roots
 function crt(v) {
@@ -454,4 +451,18 @@ export function roots(points, {x, y}) {
       v1 = crt(q2 + sd);
       return [u1 - v1 - a / 3].filter(inUnitInterval);
   }
+}
+
+export function siblingPosition(self, parent, sibling, xFactor=1, yFactor=1) {
+    const norm = sqrt((xFactor * (parent.x - sibling.x)) ** 2 + (yFactor * (parent.y - sibling.y)) ** 2);
+    let alpha = 0;
+    if (abs(self.y - parent.y) > 0.00001) {
+        alpha = -atan((xFactor * (self.x - parent.x)) / (yFactor * (self.y - parent.y))) + PI / 2;
+    } else if (self.x > parent.x) {
+        alpha += PI;
+    }
+    if (self.y > parent.y) {
+        alpha += PI;
+    }
+    return {x: (norm / xFactor) * cos(alpha) + parent.x, y: (norm / yFactor) * sin(alpha) + parent.y};
 }

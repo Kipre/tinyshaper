@@ -225,7 +225,7 @@
         {
             "x": 0.06,
             "y": 0.5,
-            "continuous": false
+            "continuous": true
         },
         {
             "x": 0.1,
