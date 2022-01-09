@@ -453,6 +453,14 @@ export function roots(points, {x, y}) {
   }
 }
 
+export function evaluate([{x: x0, y: y0}, {x: x1, y: y1}, {x: x2, y: y2}, {x: x3, y: y3}], t) {
+    const opp = 1 - t;
+    const [a, b, c, d] = [opp ** 3, 3 * opp ** 2 * t, 3 * opp * t ** 2, t ** 3];
+    const x = x0 * a + x1 * b + x2 * c + x3 * d;
+    const y = y0 * a + y1 * b + y2 * c + y3 * d;
+    return {x, y};
+}
+
 export function siblingPosition(self, parent, sibling, xFactor=1, yFactor=1) {
     const norm = sqrt((xFactor * (parent.x - sibling.x)) ** 2 + (yFactor * (parent.y - sibling.y)) ** 2);
     let alpha = 0;

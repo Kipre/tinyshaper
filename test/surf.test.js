@@ -1,5 +1,5 @@
 import bro from './brotest/brotest.js';
-import {P, BezierPath, BezierCurve, Board, v3, roots, siblingPosition} from '../js/surf.js';
+import {P, BezierPath, BezierCurve, Board, v3, roots, siblingPosition, evaluate} from '../js/surf.js';
 
 const p1 = new P({x:1, y:2});
 const p2 = new P({x:3, y:4});
@@ -46,5 +46,19 @@ bro.test('sibling position', () => {
   bro.expect(siblingPosition({x: 0.1, y: 1}, {x: 0, y: 0}, {x: 1, y: 0})).toEqual({x: -0.09950371902099893, y:-0.9950371902099892});
   bro.expect(siblingPosition({x: -1, y: 0}, {x: 0, y: 0}, {x: 0, y: 1})).toEqual({x: 1, y: 0});
   bro.expect(siblingPosition({x: 1, y: 0}, {x: 0, y: 0}, {x: 0, y: 1})).toEqual({x: -1, y: 1.2246467991473532e-16});
+});
+
+
+bro.test('simple evaluation function', () => {
+  bro.expect(evaluate([{x: 0, y: 0}, {x: 0, y: 0}, {x: 1, y: 1}, {x: 1, y: 1}], 0)).toEqual({x: 0, y: 0});
+  bro.expect(evaluate([{x: 0, y: 0}, {x: 0, y: 0}, {x: 1, y: 1}, {x: 1, y: 1}], 1)).toEqual({x: 1, y: 1});
+  bro.expect(evaluate([{x: 0, y: 0}, {x: 1, y: 1}, {x: 0, y: 0}, {x: 1, y: 1}], 0)).toEqual({x: 0, y: 0});
+  bro.expect(evaluate([{x: 0, y: 0}, {x: 1, y: 1}, {x: 0, y: 0}, {x: 1, y: 1}], 1)).toEqual({x: 1, y: 1});
+  bro.expect(evaluate([{x: 0, y: 0}, {x: 1, y: 0}, {x: 0, y: 1}, {x: 1, y: 1}], 0.2)).toEqual({x: 0.3920000000000001, y: 0.10400000000000004});
+  bro.expect(evaluate([{x: 0, y: 0}, {x: 1, y: 0}, {x: 0, y: 1}, {x: 1, y: 1}], 0.33)).toEqual({x: 0.48034799999999994, y: 0.254826});
+  bro.expect(evaluate([{x: 0, y: 0}, {x: 1, y: 0}, {x: 0, y: 1}, {x: 1, y: 1}], 0.5)).toEqual({x: 0.5, y: 0.5});
+  bro.expect(evaluate([{x: 0, y: 0}, {x: 1, y: 0}, {x: 0, y: 1}, {x: 1, y: 1}], 0.9)).toEqual({x: 0.7560000000000001, y: 0.9720000000000001});
+  bro.expect(evaluate([{x: 0, y: 0}, {x: 1, y: 0}, {x: 0, y: 1}, {x: 1, y: 1}], -0.2)).toEqual({x: -0.8720000000000001, y: 0.136});
+  bro.expect(evaluate([{x: 0, y: 0}, {x: 1, y: 0}, {x: 0, y: 1}, {x: 1, y: 1}], 1.5)).toEqual({x: 4.5, y: 0});
 });
 
