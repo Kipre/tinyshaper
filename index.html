@@ -16,13 +16,9 @@
             <div id='controls'>
                 <h3>Surf</h3>
                 <hr>
-                <h4>Point</h4>
-                <dim-input name='x'></dim-input>
-                <dim-input name='y'></dim-input>
-                <toggle-switch id='continuityswitch' name='Continuity' left='On' right='Off' event='continuitytoggle' disabled></toggle-switch>
-                <hr>
-                <h4>Dimensions</h4>
-                <dims-input id='dims-control'></dims-input>
+                <button id='set-x'>X</button>
+                <button id='set-y'>Y</button>
+                <button id='set-z'>Z</button>
             </div>
             <footer>
                 Cyprien Neverov  
@@ -33,7 +29,7 @@
             </footer>
         </div>
     </body>
-    <script src="js/twgl-full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.js" integrity="sha512-NLtnLBS9Q2w7GKK9rKxdtgL7rA7CAS85uC/0xd9im4J/yOL4F9ZVlv634NAM7run8hz3wI2GabaA6vv8vJtHiQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script async src="https://unpkg.com/es-module-shims@1.3.6/dist/es-module-shims.js"></script>
+    <script type="importmap">{"imports": {"three": "https://unpkg.com/three@0.140.2/build/three.module.js"}}</script>
     <script type='module' src='js/main.js'></script>
 </html>
