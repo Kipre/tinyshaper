@@ -303,12 +303,14 @@ export class Board {
         
         const normal = [],
             indices = [],
-            position = [];
+            position = [],
+            xRatio = this.width / this.length,
+            yRatio = this.thickness / this.length;
         
         for (const x of xs) {
             points = this.getFullCut(x).project(nbPoints);
             for (const p of points) {
-                position.push([p.x* this.width, p.y* this.thickness, x* this.length - this.length / 2]);
+                position.push([p.x* xRatio, 0.5-x, p.y* yRatio]);
             }
         }
 
@@ -335,9 +337,9 @@ export class Board {
         normal.push(...lastBatchOfNormals);
         
         return {
-            indices: indices, 
-            position: position.flat(), 
-            normal: normal
+            indices, 
+            position: new Float32Array(position.flat()), 
+            normal: new Float32Array(normal)
         };
     }
 

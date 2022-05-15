@@ -9,14 +9,12 @@
     </head>
     <body>
         <div class="content">
+            <canvas id='threed'></canvas>
             <svg id='vis'></svg>
         </div>
         <div id='toolbar' class="toolbar">
             <div id='controls'>
                 <h3>Surf</h3>
-                <hr>
-                <h4>View</h4>
-                <toggle-switch name='Toggle view' left='2D' right='3D' event='viewtoggle'></toggle-switch>
                 <hr>
                 <h4>Point</h4>
                 <dim-input name='x'></dim-input>
@@ -36,5 +34,6 @@
         </div>
     </body>
     <script src="js/twgl-full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.js" integrity="sha512-NLtnLBS9Q2w7GKK9rKxdtgL7rA7CAS85uC/0xd9im4J/yOL4F9ZVlv634NAM7run8hz3wI2GabaA6vv8vJtHiQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script type='module' src='js/main.js'></script>
 </html>

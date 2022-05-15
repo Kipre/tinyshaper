@@ -1,5 +1,5 @@
 import * as d3 from "https://cdn.skypack.dev/d3@7";
-import {roots, siblingPosition} from './surf.js';
+import {roots, siblingPosition, evaluate} from './surf.js';
 
 const config = {
     pointStrokeWidth: 1,
@@ -14,7 +14,7 @@ const state = {
     pivoted: false
 }
 
-export function setup(board, logicBoard) {
+export function setup(board, onDragEnd) {
 
     const profiles = {
         'z': {
@@ -30,11 +30,7 @@ export function setup(board, logicBoard) {
             height: board.thickness,
         },
         'x0': {
-            height: (roots(board.yDown, {
-                x: board.z[3].x
-            })[0] - roots(board.yUp, {
-                x: board.z[3].x
-            })[0]) * board.thickness,
+            height: (evaluate(board.yDown, roots(board.yDown, {x: board.z[3].x})[0]) - evaluate(board.yUp, roots(board.yUp, {x: board.z[3].x})[0])) * board.thickness,
             width: board.z[3].y * board.width
         }
     }
@@ -155,8 +151,13 @@ export function setup(board, logicBoard) {
 
         svg.on("mousemove", event=>dragSubject({sourceEvent: event})).call(d3.drag().subject(dragSubject)
             .on("start", ({subject})=>subject && svg.style("cursor", "grabbing"))
-            .on("drag", ({subject, dx, dy})=>subject(dx, dy))
-            .on("end", ()=>svg.style("cursor", "grab"))
+            .on("drag", ({subject, dx, dy})=>{
+                subject(dx, dy);
+                onDragEnd?.();
+            })
+            .on("end", ()=>{
+                svg.style("cursor", "grab");
+            })
             .on("start.render drag.render end.render", update));
     }
 
@@ -371,88 +372,6 @@ customElements.define('dims-input', class extends HTMLElement {
         for (const dim of this.dims) {
             this.inputs[dim].value = board[dim];
         }
-    }
-}
-);
-
-customElements.define('toggle-switch', class extends HTMLElement {
-
-    constructor() {
-        super();
-
-        const boxHeight = 25;
-
-        const shadowRoot = this.attachShadow({
-            mode: 'open'
-        });
-
-        this.name = this.getAttribute('name');
-        this.left = this.getAttribute('left');
-        this.right = this.getAttribute('right');
-        this.event = this.getAttribute('event');
-
-        const div = document.createElement('div');
-        div.classList.add('container');
-        const label = document.createElement('label');
-        this.box = document.createElement('div');
-        this.box.classList.add('box');
-        if (this.getAttribute('disabled') != null) {
-            this.box.classList.add('disabled');
-        }
-        this.box.style.height = boxHeight;
-
-        const switsh = document.createElement('span');
-        switsh.classList.add('switch');
-        switsh.style.height = boxHeight - 4;
-        switsh.style.width = 33;
-
-        const css = document.createElement('style');
-
-        css.textContent = diyElementsStyle;
-
-        shadowRoot.appendChild(css);
-        shadowRoot.appendChild(div);
-        div.appendChild(label);
-        div.appendChild(this.box);
-        this.box.innerText = `${this.left} \u00A0\u00A0\u00A0 ${this.right}`;
-        this.box.appendChild(switsh);
-
-        label.innerText = this.name;
-
-        this.box.onclick = ()=>{
-            this.box.classList.toggle('checked');
-            const event = new Event(this.event);
-            document.dispatchEvent(event);
-        }
-
-    }
-
-    disable() {
-        this.box.classList.add('disabled');
-    }
-
-    enable() {
-        this.box.classList.remove('disabled');
-    }
-
-    check() {
-        this.box.classList.add('checked');
-    }
-
-    uncheck() {
-        this.box.classList.remove('checked');
-    }
-
-}
-);
-
-document.addEventListener('pointselected', (e)=>{
-    const tog = document.getElementById('continuityswitch');
-    if (e.detail?.point) {
-        tog.enable();
-        (e.detail.point.continuity) ? tog.uncheck() : tog.check();
-    } else {
-        tog.disable();
     }
 }
 );

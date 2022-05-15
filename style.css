@@ -1,6 +1,7 @@
 html, body {
     margin: 0 !important;
     padding: 0 !important;
+    overflow: hidden;
 }
 
 body {
@@ -51,7 +52,7 @@ footer {
 .content {
     grid-row: 1;
     grid-column: 2;
-}
+position: relative;}
 
 button {
     background: #c7b7d7;
@@ -91,6 +92,17 @@ profile {
     }
 }
 
+canvas#threed {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+}
+
+svg#vis {
+  position: absolute;
+/*   pointer-events: none; */
+}
+
 
 svg {
   width: 100%;
@@ -116,4 +128,4 @@ svg {
   text-anchor: middle;
   font: 11px var(--sans-serif);
   user-select: none;
-}
+position: absolute;}
