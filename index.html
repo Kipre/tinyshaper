@@ -16,9 +16,11 @@
             <div id='controls'>
                 <h3>Surf</h3>
                 <hr>
-                <button id='set-x'>X</button>
-                <button id='set-y'>Y</button>
-                <button id='set-z'>Z</button>
+                <div id='positions'>
+                    <button>Top</button>
+                    <button>Side</button>
+                    <button>Front</button>
+                </div>
             </div>
             <footer>
                 Cyprien Neverov  
@@ -30,6 +32,8 @@
         </div>
     </body>
     <script async src="https://unpkg.com/es-module-shims@1.3.6/dist/es-module-shims.js"></script>
-    <script type="importmap">{"imports": {"three": "https://unpkg.com/three@0.140.2/build/three.module.js"}}</script>
+    <script type="importmap">
+        {"imports": {"three": "https://unpkg.com/three@0.140.2/build/three.module.js"}}
+    </script>
     <script type='module' src='js/main.js'></script>
 </html>

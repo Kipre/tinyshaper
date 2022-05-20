@@ -1,16 +1,15 @@
 html, body {
     margin: 0;
     padding: 0;
-    overflow: hidden;
+    height: 100%;
+    width: 100%;
+  overflow: hidden;
 }
 
 body {
     font-family: 'Roboto', sans-serif;
     display: grid;
-    grid-template-columns: 14rem auto;
-    grid-template-rows: auto;
-    grid-gap: 0px;
-    min-height: 99.8vh;
+    grid-template: auto / minmax(10rem, 20%) auto;
     background: #ffffff;
 }
 
@@ -130,4 +129,5 @@ svg {
   text-anchor: middle;
   font: 11px var(--sans-serif);
   user-select: none;
-position: absolute;}
+  position: absolute;
+}

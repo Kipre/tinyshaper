@@ -32,6 +32,9 @@ scene.add(light2);
 const ambient = new THREE.AmbientLight(0x404040);
 scene.add(ambient);
 
+const axesHelper = new THREE.AxesHelper( 1 );
+scene.add( axesHelper );
+
 let mesh;
 
 export function display3D(board) {
@@ -84,28 +87,22 @@ function animate() {
 
 window.addEventListener('resize', onResize);
 
-document.getElementById('set-z').addEventListener('click', () => {
-    camera.position.set(0, 0, 1);
-    camera.up.x = 0;
-    camera.up.y = 0;
-    camera.up.z = 1;
-    camera.lookAt(0, 0, 0)
-    // controls.zoom = 1;
+const [top, side, bottom] = document.getElementById('positions').children;
+
+top.addEventListener('click', () => {
+    camera.position.set(0, 0, 5);
+    camera.up.set(1, 0, 0)
     controls.update();
 })
 
-document.getElementById('set-y').addEventListener('click', () => {
-    camera.position.set(-1, 0, 0);
-    // camera.up.set(0, 0, 1);
-    // camera.lookAt(0, 0, 0)
-    // controls.zoom = 1;
+side.addEventListener('click', () => {
+    camera.position.set(-5, 0, 0);
+    camera.up.set(0, 0, 1);
     controls.update();
 })
-
-document.getElementById('set-x').addEventListener('click', () => {
-    camera.position.set(0, -1, 0);
-    // camera.up.set(0,1,0);
-    // camera.lookAt(0, 0, 0)
-    // controls.zoom = 2;
+      
+bottom.addEventListener('click', () => {
+    camera.position.set(0, -5, 0);
+    camera.up.set(0, 0, 1);
     controls.update();
 })
