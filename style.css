@@ -104,12 +104,16 @@ canvas#threed {
 
 svg#vis {
   position: absolute;
-  /*pointer-events: none;*/
+  pointer-events: none;
   opacity: var(--svg-opacity);
 }
 
 svg#vis.hidden {
     visibility: hidden;
+}
+
+svg#vis * {
+    pointer-events: auto;
 }
 
 svg {
