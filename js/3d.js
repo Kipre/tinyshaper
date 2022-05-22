@@ -13,12 +13,13 @@ const {x: pad, y: vert} = halves(canvas.offsetWidth, canvas.offsetHeight);
 const camera = new THREE.OrthographicCamera( -pad, pad, vert, -vert, -1, 1000 );
 camera.position.set(1, 1, 1);
 
-const controls = new TrackballControls(camera, canvas);
+export const controls = new TrackballControls(camera, canvas);
 controls.rotateSpeed = 2.0;
 controls.zoomSpeed = 1.2;
 controls.noPan = true;
 
 const renderer = new THREE.WebGLRenderer({canvas, alpha: true});
+renderer.setPixelRatio( window.devicePixelRatio );
 
 const material = new THREE.MeshPhongMaterial();
 
@@ -96,34 +97,24 @@ function getCoords(camera) {
     };
 }
 
-function setCamera({x, y, z, xUp, yUp, zUp}) {
+function setCamera({x, y, z, xUp, yUp, zUp, a}) {
     camera.position.set(x, y, z);
     camera.up.set(xUp, yUp, zUp);
     controls.update();
+    if (a)
+        document.documentElement.style.setProperty('--svg-opacity', a);
 }
 
-const [top, side, bottom] = document.getElementById('positions').children;
+export function tweenCameraTo(destination) {
+    return new TWEEN.Tween({...getCoords(camera), a: -2})
+      .to({...destination, a: 1}, 500)
+      .easing(TWEEN.Easing.Quadratic.Out)
+      .onUpdate(setCamera)
+      .start();
+}
 
-top.addEventListener('click', () => {
-    new TWEEN.Tween(getCoords(camera))
-      .to({x: 0, y: 0, z: 5, xUp: 1, yUp: 0, zUp: 0}, 500)
-      .easing(TWEEN.Easing.Quadratic.Out)
-      .onUpdate(setCamera)
-      .start();
-})
-
-side.addEventListener('click', () => {
-    new TWEEN.Tween(getCoords(camera))
-      .to({x: -5, y: 0, z: 0, xUp: 0, yUp: 0, zUp: 1}, 500)
-      .easing(TWEEN.Easing.Quadratic.Out)
-      .onUpdate(setCamera)
-      .start();
-})
-      
-bottom.addEventListener('click', () => {
-    new TWEEN.Tween(getCoords(camera))
-      .to({x: 0, y: -5, z: 0, xUp: 0, yUp: 0, zUp: 1}, 500)
-      .easing(TWEEN.Easing.Quadratic.Out)
-      .onUpdate(setCamera)
-      .start();
-  })
+export const coords = {
+    top: {profile: 'z', x: 0, y:0, z: 5, xUp: 1, yUp: 0, zUp: 0},
+    side: {profile: 'yUp', x: -5, y:0, z: 0, xUp: 0, yUp: 0, zUp: 1},
+    bottom: {profile: 'x', x: 0, y:-5, z: 0, xUp: 0, yUp: 0, zUp: 1},
+};

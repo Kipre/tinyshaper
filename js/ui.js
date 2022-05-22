@@ -14,14 +14,14 @@ const state = {
     pivoted: false
 }
 
-export function setup(board, onDragEnd) {
+export function setup(board, onDragEnd, profile) {
 
     const profiles = {
         'z': {
             width: board.length,
             height: board.width,
         },
-        'y': {
+        'yUp': {
             width: board.length,
             height: board.width,
         },
@@ -34,6 +34,8 @@ export function setup(board, onDragEnd) {
             width: board.z[3].y * board.width
         }
     }
+
+    state.profile = profile;
 
     const {width, height} = profiles[state.profile];
     const points = board[state.profile];
