@@ -2,6 +2,7 @@ import * as surf from './surf.js';
 import {config} from './ui.js';
 import * as THREE from "three";
 import { TrackballControls } from 'https://unpkg.com/three@0.140.2/examples/jsm/controls/TrackballControls.js';
+import * as TWEEN from 'https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.esm.js';
 
 
 const scene = new THREE.Scene();
@@ -32,8 +33,8 @@ scene.add(light2);
 const ambient = new THREE.AmbientLight(0x404040);
 scene.add(ambient);
 
-const axesHelper = new THREE.AxesHelper( 1 );
-scene.add( axesHelper );
+// const axesHelper = new THREE.AxesHelper( 1 );
+// scene.add( axesHelper );
 
 let mesh;
 
@@ -79,30 +80,50 @@ function onResize() {
     controls.update();
 }
 
-function animate() {
+function animate(time) {
     requestAnimationFrame(animate);
+    TWEEN.update(time);
     controls.update();
     renderer.render(scene, camera);
 }
 
 window.addEventListener('resize', onResize);
 
+function getCoords(camera) {
+    return {
+        x: camera.position.x, y: camera.position.y, z: camera.position.z,
+        xUp: camera.up.x, yUp: camera.up.y, zUp: camera.up.z
+    };
+}
+
+function setCamera({x, y, z, xUp, yUp, zUp}) {
+    camera.position.set(x, y, z);
+    camera.up.set(xUp, yUp, zUp);
+    controls.update();
+}
+
 const [top, side, bottom] = document.getElementById('positions').children;
 
 top.addEventListener('click', () => {
-    camera.position.set(0, 0, 5);
-    camera.up.set(1, 0, 0)
-    controls.update();
+    new TWEEN.Tween(getCoords(camera))
+      .to({x: 0, y: 0, z: 5, xUp: 1, yUp: 0, zUp: 0}, 500)
+      .easing(TWEEN.Easing.Quadratic.Out)
+      .onUpdate(setCamera)
+      .start();
 })
 
 side.addEventListener('click', () => {
-    camera.position.set(-5, 0, 0);
-    camera.up.set(0, 0, 1);
-    controls.update();
+    new TWEEN.Tween(getCoords(camera))
+      .to({x: -5, y: 0, z: 0, xUp: 0, yUp: 0, zUp: 1}, 500)
+      .easing(TWEEN.Easing.Quadratic.Out)
+      .onUpdate(setCamera)
+      .start();
 })
       
 bottom.addEventListener('click', () => {
-    camera.position.set(0, -5, 0);
-    camera.up.set(0, 0, 1);
-    controls.update();
-})
+    new TWEEN.Tween(getCoords(camera))
+      .to({x: 0, y: -5, z: 0, xUp: 0, yUp: 0, zUp: 1}, 500)
+      .easing(TWEEN.Easing.Quadratic.Out)
+      .onUpdate(setCamera)
+      .start();
+  })
