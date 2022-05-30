@@ -1,5 +1,27 @@
 :root {
+    --primary: black;
+    --font-size:  11px;
+    --secondary-000: #ffffff;
+    --secondary-100: #e6e6e6;
+    --secondary-300: #d3d3d3;
+    --secondary-500: #b3b3b3;
+    --secondary-700: #88718c;
+
+    --brand-100: #aaa;
+    --brand-200: #c2ae7b;
+
     --svg-opacity: 1;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --primary: antiquewhite;
+        --secondary-000: #282829;
+        --secondary-100: #332b34;
+        --secondary-300: #fce6ff;
+        --secondary-700: #634085;
+        --secondary-500: #634085;
+    }
 }
 
 html, body {
@@ -7,14 +29,15 @@ html, body {
     padding: 0;
     height: 100%;
     width: 100%;
-  overflow: hidden;
+    overflow: hidden;
 }
 
 body {
     font-family: 'Roboto', sans-serif;
     display: grid;
     grid-template: auto / minmax(10rem, 15%) auto;
-    background: #ffffff;
+    background: var(--secondary-000);
+    color: var(--primary);
 }
 
 #controls {
@@ -27,7 +50,7 @@ body {
     justify-content: space-between;
     grid-row: 1;
     grid-column: 1;
-    background: #fce6ff;
+    background: var(--secondary-100);
 }
 
 h3 {
@@ -41,13 +64,14 @@ h4 {
 
 hr {
     border: none;
-    border-top: solid #88718c 1px;
+    border-top: solid transparent 1px;
+    border-top-color: var(--secondary-700);
 }
 
 footer {
     position: relative;
     padding-bottom: 15px;
-    font-size: 11px;
+    font-size: var(--font-size);
     width: 100%;
     text-align: center;
 }
@@ -59,42 +83,14 @@ footer {
 }
 
 button {
-    background: #c7b7d7;
-    color: black;
+    background: var(--secondary-500);
+    color: var(--primary);
     border-radius: 5px;
     padding: 6px;
-    margin-top: 5px;
-    margin-bottom: 5px;
+    margin: 5px 0;
     width: 100%
 }
 
-profile {
-    points-color: #a13939;
-}
-
-@media (prefers-color-scheme: dark) {
-    body {
-        background: #282829;
-        color: antiquewhite
-    }
-
-    button {
-        background: #634085;
-        color: aliceblue;
-    }
-
-    a {
-        color: #85c0f3;
-    }
-
-    hr {
-        border-top: solid #88718c 1px;
-    }
-
-    .toolbar {
-        background: #332b34;
-    }
-}
 
 canvas#threed {
   position: absolute;
@@ -123,7 +119,7 @@ svg {
 }
 
 svg .u-line {
-  stroke: #aaa;
+  stroke: var(--brand-100);
   stroke-dasharray: 2 2;
 }
 
@@ -133,12 +129,12 @@ svg .u-path {
 }
 
 svg .u-point circle {
-  fill: #c2ae7b;
+  fill: var(--brand-200);
 }
 
 svg {
   text-anchor: middle;
-  font: 11px var(--sans-serif);
+  font: var(--font-size) var(--sans-serif);
   user-select: none;
   position: absolute;
 }
