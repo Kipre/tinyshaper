@@ -1,6 +1,7 @@
 :root {
     --primary: black;
     --font-size:  11px;
+    
     --secondary-000: #ffffff;
     --secondary-100: #e6e6e6;
     --secondary-300: #d3d3d3;
@@ -9,6 +10,8 @@
 
     --brand-100: #aaa;
     --brand-200: #c2ae7b;
+
+    --link-color: black;
 
     --svg-opacity: 1;
 }
@@ -21,6 +24,8 @@
         --secondary-300: #fce6ff;
         --secondary-700: #634085;
         --secondary-500: #634085;
+
+        --link-color: #85c0f3;
     }
 }
 
@@ -38,6 +43,14 @@ body {
     grid-template: auto / minmax(10rem, 15%) auto;
     background: var(--secondary-000);
     color: var(--primary);
+}
+
+a {
+    color: var(--link-color);
+}
+
+a:not(:last-of-type)::after {
+    content: ' | ';
 }
 
 #controls {
@@ -82,6 +95,12 @@ footer {
     position: relative;
 }
 
+.content > * {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+}
+
 button {
     background: var(--secondary-500);
     color: var(--primary);
@@ -91,31 +110,20 @@ button {
     width: 100%
 }
 
-
-canvas#threed {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-}
+/* SVG */
 
 svg#vis {
-  position: absolute;
-  pointer-events: none;
-  opacity: var(--svg-opacity);
+    pointer-events: none;
+    opacity: var(--svg-opacity);
+    overflow: visible;
 }
 
 svg#vis.hidden {
     visibility: hidden;
 }
 
-svg#vis * {
+svg#vis > * {
     pointer-events: auto;
-}
-
-svg {
-  width: 100%;
-  height: 100%;
-  overflow: visible;
 }
 
 svg .u-line {
@@ -130,11 +138,4 @@ svg .u-path {
 
 svg .u-point circle {
   fill: var(--brand-200);
-}
-
-svg {
-  text-anchor: middle;
-  font: var(--font-size) var(--sans-serif);
-  user-select: none;
-  position: absolute;
 }

@@ -93,15 +93,16 @@ window.addEventListener('resize', onResize);
 function getCoords(camera) {
     return {
         x: camera.position.x, y: camera.position.y, z: camera.position.z,
-        xUp: camera.up.x, yUp: camera.up.y, zUp: camera.up.z
+        xUp: camera.up.x, yUp: camera.up.y, zUp: camera.up.z, zoom: camera.zoom
     };
 }
 
-function setCamera({x, y, z, xUp, yUp, zUp, a}) {
+function setCamera({x, y, z, xUp, yUp, zUp, zoom, a}) {
     camera.position.set(x, y, z);
     camera.up.set(xUp, yUp, zUp);
+    camera.zoom = zoom;
     controls.update();
-    if (a)
+    if (a >= 0)
         document.documentElement.style.setProperty('--svg-opacity', a);
 }
 
@@ -113,8 +114,16 @@ export function tweenCameraTo(destination) {
       .start();
 }
 
+export function alreadyWellOriented(destination) {
+    const actualPositions = getCoords(camera);
+    for (const axis in destination)
+        if (actualPositions[axis] - destination[axis] > 10e-20)
+            return false;
+    return true;
+}
+
 export const coords = {
-    top: {profile: 'z', x: 0, y:0, z: 5, xUp: 1, yUp: 0, zUp: 0},
-    side: {profile: 'yUp', x: -5, y:0, z: 0, xUp: 0, yUp: 0, zUp: 1},
-    bottom: {profile: 'x', x: 0, y:-5, z: 0, xUp: 0, yUp: 0, zUp: 1},
+    top: {profile: 'z', x: 0, y:0, z: 5, xUp: 1, yUp: 0, zUp: 0, zoom: 1},
+    side: {profile: 'yUp', x: -5, y:0, z: 0, xUp: 0, yUp: 0, zUp: 1, zoom: 1},
+    bottom: {profile: 'x', x: 0, y:-5, z: 0, xUp: 0, yUp: 0, zUp: 1, zoom: 1},
 };
