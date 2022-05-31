@@ -24,7 +24,7 @@ const showSvg = () => {
 const hideSvg = () => svg.classList.add('hidden');
 
 
-const [top, side, bottom] = document.getElementById('positions').children;
+const [top, side, front] = document.getElementById('positions').children;
 
 function moveTo({profile, ...destination}) {
     if (trid.alreadyWellOriented(destination)) return;
@@ -37,4 +37,4 @@ function moveTo({profile, ...destination}) {
 
 top.addEventListener('click', () => moveTo(trid.coords.top));
 side.addEventListener('click', () => moveTo(trid.coords.side));
-bottom.addEventListener('click', () => moveTo(trid.coords.bottom));
+front.addEventListener('click', () => moveTo(trid.coords.front));

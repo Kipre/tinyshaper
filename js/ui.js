@@ -4,7 +4,7 @@ import {roots, siblingPosition, evaluate} from './surf.js';
 export const config = {
     pointStrokeWidth: 1,
     selectRadius: 7,
-    pointRadius: 4,
+    pointRadius: 6,
     floatPrecision: 2,
     padding: 20,
 }
@@ -23,11 +23,12 @@ export function setup(board, onDragEnd, profile) {
         },
         'yUp': {
             width: board.length,
-            height: board.width,
+            height: -board.thickness,
         },
         'x': {
             width: board.width,
-            height: board.thickness,
+            height: -board.thickness,
+            half: true
         },
         'x0': {
             height: (evaluate(board.yDown, roots(board.yDown, {x: board.z[3].x})[0]) - evaluate(board.yUp, roots(board.yUp, {x: board.z[3].x})[0])) * board.thickness,
@@ -37,7 +38,7 @@ export function setup(board, onDragEnd, profile) {
 
     state.profile = profile;
 
-    const {width, height} = profiles[state.profile];
+    const {width, height, half} = profiles[state.profile];
     const points = board[state.profile];
     let scaledPoints;
 
@@ -59,21 +60,27 @@ export function setup(board, onDragEnd, profile) {
         const {clientWidth, clientHeight} = svg.node();
         const {padding} = config;
         // if (clientWidth > clientHeight) {
-            [state.pivoted, xScale] = [false, clientWidth - 2*padding];
         // } else {
         // [state.pivoted, xScale] = [true, clientHeight];
         // }
+        [state.pivoted, xScale] = [false, clientWidth - 2*padding];
+        let xHalf = padding;
+        const yHalf = clientHeight / 2;
+        if (half) {
+            xHalf = clientWidth / 2;
+            [state.pivoted, xScale] = [false, xHalf - padding];
+        }
+        
         yScale = xScale * (height / width);
-        const half = clientHeight / 2
 
         // bottomAxis.attr("transform", `translate(0, ${yScale * 1.1})`).call(d3.axisBottom(d3.scaleLinear().range([0, xScale]).domain([0, length])).ticks())
         scale = ({x, y})=>({
-            x: x * xScale + padding,
-            y: y * yScale + half
+            x: x * xScale + xHalf,
+            y: y * yScale + yHalf
         });
         unscale = ({x, y})=>({
-            x: (x - padding) / xScale,
-            y: (y - half) / yScale
+            x: (x - xHalf) / xScale,
+            y: (y - yHalf) / yScale
         });
         update();
     }
@@ -102,13 +109,15 @@ export function setup(board, onDragEnd, profile) {
                 .attr("r", config.pointRadius)))
         .attr("transform", ({x, y})=>`translate(${[x, y]})`);
 
-        svg.selectAll(".u-line").data(quads.flatMap(([from,to,from1,to1])=>[{
-            from,
-            to
-        }, {
-            from: from1,
-            to: to1
-        }])).join("line").attr("x1", ({from})=>from.x).attr("y1", ({from})=>from.y).attr("x2", ({to})=>to.x).attr("y2", ({to})=>to.y).classed("u-line", true);
+        svg.selectAll(".u-line")
+            .data(quads
+                .flatMap(([from,to,from1,to1])=>[{from, to}, {from: from1, to: to1}]))
+            .join("line")
+            .attr("x1", ({from})=>from.x)
+            .attr("y1", ({from})=>from.y)
+            .attr("x2", ({to})=>to.x)
+            .attr("y2", ({to})=>to.y)
+            .classed("u-line", true);
     }
 
     function draggable() {

@@ -4,6 +4,11 @@ import * as THREE from "three";
 import { TrackballControls } from 'https://unpkg.com/three@0.140.2/examples/jsm/controls/TrackballControls.js';
 import * as TWEEN from 'https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.esm.js';
 
+export const coords = {
+    top: {profile: 'z', x: 0, y:0, z: 5, xUp: 1, yUp: 0, zUp: 0, zoom: 1},
+    side: {profile: 'yUp', x: -5, y:0, z: 0, xUp: 0, yUp: 0, zUp: 1, zoom: 1},
+    front: {profile: 'x', x: 0, y:-5, z: 0, xUp: 0, yUp: 0, zUp: 1, zoom: 3},
+};
 
 const scene = new THREE.Scene();
 const canvas = document.getElementById('threed');
@@ -41,6 +46,10 @@ let mesh;
 
 export function display3D(board) {
     const {indices, position, normal} = board.get3d();
+
+    // recompute the required zoom for the x profile
+    const {length, width} = board;
+    coords.front.zoom = length / width / 2;
 
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.BufferAttribute(position,3));
@@ -101,6 +110,7 @@ function setCamera({x, y, z, xUp, yUp, zUp, zoom, a}) {
     camera.position.set(x, y, z);
     camera.up.set(xUp, yUp, zUp);
     camera.zoom = zoom;
+    camera.updateProjectionMatrix();
     controls.update();
     if (a >= 0)
         document.documentElement.style.setProperty('--svg-opacity', a);
@@ -122,8 +132,3 @@ export function alreadyWellOriented(destination) {
     return true;
 }
 
-export const coords = {
-    top: {profile: 'z', x: 0, y:0, z: 5, xUp: 1, yUp: 0, zUp: 0, zoom: 1},
-    side: {profile: 'yUp', x: -5, y:0, z: 0, xUp: 0, yUp: 0, zUp: 1, zoom: 1},
-    bottom: {profile: 'x', x: 0, y:-5, z: 0, xUp: 0, yUp: 0, zUp: 1, zoom: 1},
-};

@@ -53,41 +53,20 @@ a:not(:last-of-type)::after {
     content: ' | ';
 }
 
-#controls {
-    padding: 5px;
-}
-
 .toolbar {
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
     grid-row: 1;
     grid-column: 1;
     background: var(--secondary-100);
-}
-
-h3 {
     text-align: center;
-}
-
-h4 {
-    margin-top: 15px;
-    margin-bottom: 10px;
-}
-
-hr {
-    border: none;
-    border-top: solid transparent 1px;
-    border-top-color: var(--secondary-700);
 }
 
 footer {
-    position: relative;
-    padding-bottom: 15px;
+    margin-top:  auto;
+    padding-bottom: 1em;
     font-size: var(--font-size);
-    width: 100%;
-    text-align: center;
-}
+    }
 
 .content {
     grid-row: 1;
