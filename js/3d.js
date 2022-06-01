@@ -1,8 +1,8 @@
+import * as THREE from "three";
+import * as TWEEN from 'https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.esm.js';
+import { TrackballControls } from 'https://unpkg.com/three@0.140.2/examples/jsm/controls/TrackballControls.js';
 import * as surf from './surf.js';
 import {config} from './ui.js';
-import * as THREE from "three";
-import { TrackballControls } from 'https://unpkg.com/three@0.140.2/examples/jsm/controls/TrackballControls.js';
-import * as TWEEN from 'https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.esm.js';
 
 export const coords = {
     top: {profile: 'z', x: 0, y:0, z: 5, xUp: 1, yUp: 0, zUp: 0, zoom: 1},
@@ -16,7 +16,8 @@ const canvas = document.getElementById('threed');
 const {x: pad, y: vert} = halves(canvas.offsetWidth, canvas.offsetHeight);
 
 const camera = new THREE.OrthographicCamera( -pad, pad, vert, -vert, -1, 1000 );
-camera.position.set(1, 1, 1);
+camera.position.set(-1.5, -0.5, 1);
+camera.up.set(0, 0, 1);
 
 export const controls = new TrackballControls(camera, canvas);
 controls.rotateSpeed = 2.0;
@@ -42,7 +43,7 @@ scene.add(ambient);
 // const axesHelper = new THREE.AxesHelper( 1 );
 // scene.add( axesHelper );
 
-let mesh;
+const geometry = new THREE.BufferGeometry();
 
 export function display3D(board) {
     const {indices, position, normal} = board.get3d();
@@ -51,19 +52,20 @@ export function display3D(board) {
     const {length, width} = board;
     coords.front.zoom = length / width / 2;
 
-    const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.BufferAttribute(position,3));
-    geometry.setAttribute('normal', new THREE.BufferAttribute(normal,3));
     geometry.setIndex(indices);
+    geometry.computeVertexNormals();
 
-    if (mesh)
-        scene.remove(mesh);
-
-    mesh = new THREE.Mesh(geometry,material);
+    const mesh = new THREE.Mesh(geometry,material);
     scene.add(mesh);
 
     onResize();
     animate();
+}
+
+export function update(board) {
+    const positions = geometry.getAttribute('position');
+    board.updateBuffer(positions);
 }
 
 function halves(width, height) {

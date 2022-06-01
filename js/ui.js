@@ -162,6 +162,7 @@ export function setup(board, onDragEnd, profile) {
             .on("start", ({subject})=>subject && svg.style("cursor", "grabbing"))
             .on("drag", ({subject, dx, dy})=>{
                 subject(dx, dy);
+                onDragEnd?.();
             })
             .on("end", ()=>{
                 svg.style("cursor", "grab");

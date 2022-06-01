@@ -225,6 +225,16 @@ export class BezierPath {
     }
 }
 
+const nbSlices=30, nbPoints=15;
+
+
+function distribute(x) {
+    return (1 - cos(PI * x))/2
+}
+
+const slices = Array.from({length: nbSlices}, (x, i) => distribute(i/(nbSlices - 1)));
+
+
 export class Board {
 
     constructor(board) {
@@ -291,23 +301,17 @@ export class Board {
         }
         return new BezierPath(result)
     }
-
-    distribute(x) {
-        return (1 - cos(PI * x))/2
-    }
     
-    get3d(nbSlices=30, nbPoints=15) {
+    get3d() {
         let points;
 
-        const xs = Array.from({length: nbSlices}, (x, i) => this.distribute(i/(nbSlices - 1)));
-        
         const normal = [],
             indices = [],
             position = [],
             xRatio = this.width / this.length,
             yRatio = this.thickness / this.length;
         
-        for (const x of xs) {
+        for (const x of slices) {
             points = this.getFullCut(x).project(nbPoints);
             for (const p of points) {
                 position.push([p.x* xRatio, 0.5-x, p.y* yRatio]);
@@ -343,7 +347,25 @@ export class Board {
         };
     }
 
-    getOBJ(nbSlices=30, nbPoints=15, withNormals = true) {
+    updateBuffer(burfferAttribute) {
+        const xRatio = this.width / this.length,
+            yRatio = this.thickness / this.length;
+        
+        let idx = 0;
+        for (const x of slices) {
+            const points = this.getFullCut(x).project(nbPoints);
+            const currentX = 0.5-x;
+            for (const p of points) {
+                burfferAttribute.array[idx++] = p.x* xRatio;
+                burfferAttribute.array[idx++] = currentX;
+                burfferAttribute.array[idx++] = p.y* yRatio;
+            }
+        }
+
+        burfferAttribute.needsUpdate = true;
+    }
+
+    getOBJ(withNormals = true) {
 
         const arrays = this.get3d2(nbSlices, nbPoints);
                 

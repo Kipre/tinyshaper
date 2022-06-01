@@ -10,7 +10,7 @@ const board = await res.json();
 const logicBoard = new surf.Board(board);
 
 function update() {
-    trid.display3D(new surf.Board(board));
+    trid.update(new surf.Board(board));
 }
 
 ui.setup(board, update, 'z');
