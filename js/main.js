@@ -21,7 +21,10 @@ const showSvg = () => {
     document.documentElement.style.setProperty('--svg-opacity', 0);
     svg.classList.remove('hidden');
 }
-const hideSvg = () => svg.classList.add('hidden');
+const hideSvg = () => {
+    svg.classList.add('hidden');
+    trid.controls.removeEventListener('change', hideSvg);
+};
 
 
 const [top, side, front] = document.getElementById('positions').children;
@@ -32,7 +35,7 @@ function moveTo({profile, ...destination}) {
     ui.setup(board, update, profile);
     showSvg();
     trid.tweenCameraTo(destination)
-        .onComplete(() => trid.controls.addEventListener('change', hideSvg, {once: true}));
+        .onComplete(() => trid.controls.addEventListener('change', hideSvg));
 }
 
 top.addEventListener('click', () => moveTo(trid.coords.top));
