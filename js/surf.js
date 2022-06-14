@@ -293,9 +293,11 @@ export class Board {
 
     getFullCut(x) {
         const result = [];
+        // project one hemishere
         for (var i = 0; i < this.x.points.length; i++) {
             result.push(P.fromPair(this.z_paths[i].get(x).y, this.y_paths[i].get(x).y))
         }
+        // copy the other side mirror
         for (var i = result.length - 2; i >= 0; i--) {
             result.push(result[i].mulPair(-1, 1))
         }
@@ -354,7 +356,7 @@ export class Board {
         let idx = 0;
         for (const x of slices) {
             const points = this.getFullCut(x).project(nbPoints);
-            const currentX = 0.5-x;
+            const currentX = 0.5 - x;
             for (const p of points) {
                 burfferAttribute.array[idx++] = p.x* xRatio;
                 burfferAttribute.array[idx++] = currentX;
@@ -411,6 +413,12 @@ export function roots(points, {x, y}) {
     } else {
         throw new Error('No target provided');
     }
+
+    if (target === pa) return [0];
+    if (target === pd) return [1];
+    
+
+    
 
     const inUnitInterval = t => 0 <= t && t <= 1;
 

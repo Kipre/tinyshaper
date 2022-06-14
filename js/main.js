@@ -1,20 +1,22 @@
 import*as ui from './ui.js';
-import*as surf from './surf.js';
+import*as surf2 from './surf2.js';
 import*as trid from './3d.js';
+
+const {board} = surf2;
 
 const svg = document.getElementById('vis');
 const canvas = document.getElementById('threed');
 
-const res = await fetch('board.json')
-const board = await res.json();
-const logicBoard = new surf.Board(board);
 
 function update() {
-    trid.update(new surf.Board(board));
+    surf2.getPositions(trid.getPositionsAttribute())
+    trid.update();
 }
 
 ui.setup(board, update, 'z');
-trid.display3D(logicBoard);
+const positions = surf2.getPositions();
+const indices = surf2.getIndices();
+trid.display3D(positions, indices, board);
 
 
 const showSvg = () => {

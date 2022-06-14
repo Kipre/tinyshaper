@@ -45,15 +45,13 @@ scene.add(ambient);
 
 const geometry = new THREE.BufferGeometry();
 
-export function display3D(board) {
-    const {indices, position, normal} = board.get3d();
-
+export function display3D(position, indices, board) {
     // recompute the required zoom for the x profile
     const {length, width} = board;
     coords.front.zoom = length / width / 2;
 
-    geometry.setAttribute('position', new THREE.BufferAttribute(position,3));
-    geometry.setIndex(indices);
+    geometry.setAttribute('position', new THREE.BufferAttribute(position, 3));
+    geometry.setIndex(Array.from(indices));
     geometry.computeVertexNormals();
 
     const mesh = new THREE.Mesh(geometry,material);
@@ -63,9 +61,12 @@ export function display3D(board) {
     animate();
 }
 
-export function update(board) {
-    const positions = geometry.getAttribute('position');
-    board.updateBuffer(positions);
+export function getPositionsAttribute() {
+    return geometry.getAttribute('position');
+}
+
+export function update() {
+    geometry.getAttribute('position').needsUpdate = true;
 }
 
 function halves(width, height) {
