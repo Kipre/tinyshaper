@@ -1,21 +1,21 @@
 import*as ui from './ui.js';
-import*as surf2 from './surf2.js';
+import*as surf from './surf.js';
 import*as trid from './3d.js';
 
-const {board} = surf2;
+const {board} = surf;
 
 const svg = document.getElementById('vis');
 const canvas = document.getElementById('threed');
 
 
 function update() {
-    surf2.getPositions(trid.getPositionsAttribute())
+    surf.getPositions(trid.getPositionsAttribute())
     trid.update();
 }
 
 ui.setup(board, update, 'z');
-const positions = surf2.getPositions();
-const indices = surf2.getIndices();
+const positions = surf.getPositions();
+const indices = surf.getIndices();
 trid.display3D(positions, indices, board);
 
 

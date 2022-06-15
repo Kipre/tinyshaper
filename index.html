@@ -29,7 +29,14 @@
     </body>
     <script async src="https://unpkg.com/es-module-shims@1.3.6/dist/es-module-shims.js"></script>
     <script type="importmap">
-        {"imports": {"three": "https://unpkg.com/three@0.140.2/build/three.module.js"}}
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.140.2/build/three.module.js",
+                "TrackballControls": "https://unpkg.com/three@0.140.2/examples/jsm/controls/TrackballControls.js",
+                "tween": "https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.esm.js",
+                "d3": "https://cdn.skypack.dev/d3@7"
+            }
+        }
     </script>
     <script type='module' src='js/main.js'></script>
 </html>

@@ -1,6 +1,6 @@
 import * as THREE from "three";
-import * as TWEEN from 'https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.esm.js';
-import { TrackballControls } from 'https://unpkg.com/three@0.140.2/examples/jsm/controls/TrackballControls.js';
+import * as TWEEN from "tween";
+import { TrackballControls } from "TrackballControls";
 import * as surf from './surf.js';
 import {config} from './ui.js';
 
