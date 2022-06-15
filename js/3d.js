@@ -100,7 +100,6 @@ function animate(time) {
     renderer.render(scene, camera);
 }
 
-window.addEventListener('resize', onResize);
 
 function getCoords(camera) {
     return {
@@ -135,3 +134,4 @@ export function alreadyWellOriented(destination) {
     return true;
 }
 
+window.addEventListener('resize', onResize);

@@ -1,5 +1,5 @@
 import * as d3 from "d3";
-import {roots, siblingPosition, evaluate} from './surf.js';
+import {profiles, board, roots, siblingPosition, evaluate, commitBoardChanges} from './surf.js';
 
 export const config = {
     pointStrokeWidth: 1,
@@ -14,29 +14,13 @@ const state = {
     pivoted: false
 }
 
-export function setup(board, onDragEnd, profile) {
-
-    const profiles = {
-        'z': {
-            width: board.length,
-            height: board.width,
-        },
-        'yUp': {
-            width: board.length,
-            height: -board.thickness,
-        },
-        'x': {
-            width: board.width,
-            height: -board.thickness,
-            half: true
-        },
-        'x0': {
-            height: (evaluate(board.yDown, roots(board.yDown, {x: board.z[3].x})[0]) - evaluate(board.yUp, roots(board.yUp, {x: board.z[3].x})[0])) * board.thickness,
-            width: board.z[3].y * board.width
-        }
-    }
-
+export function setProfile(profile) {
     state.profile = profile;
+    setup();
+}
+
+
+function setup() {
 
     const {width, height, half} = profiles[state.profile];
     const points = board[state.profile];
@@ -59,10 +43,6 @@ export function setup(board, onDragEnd, profile) {
     function updateViewport() {
         const {clientWidth, clientHeight} = svg.node();
         const {padding} = config;
-        // if (clientWidth > clientHeight) {
-        // } else {
-        // [state.pivoted, xScale] = [true, clientHeight];
-        // }
         [state.pivoted, xScale] = [false, clientWidth - 2*padding];
         let xHalf = padding;
         const yHalf = clientHeight / 2;
@@ -73,7 +53,6 @@ export function setup(board, onDragEnd, profile) {
         
         yScale = xScale * (height / width);
 
-        // bottomAxis.attr("transform", `translate(0, ${yScale * 1.1})`).call(d3.axisBottom(d3.scaleLinear().range([0, xScale]).domain([0, length])).ticks())
         scale = ({x, y})=>({
             x: x * xScale + xHalf,
             y: y * yScale + yHalf
@@ -162,12 +141,9 @@ export function setup(board, onDragEnd, profile) {
             .on("start", ({subject})=>subject && svg.style("cursor", "grabbing"))
             .on("drag", ({subject, dx, dy})=>{
                 subject(dx, dy);
-                onDragEnd?.();
+                commitBoardChanges();
             })
-            .on("end", ()=>{
-                svg.style("cursor", "grab");
-                onDragEnd?.();
-            })
+            .on("end", ()=>svg.style("cursor", "grab"))
             .on("start.render drag.render end.render", update));
     }
 

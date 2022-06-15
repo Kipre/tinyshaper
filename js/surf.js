@@ -1,11 +1,47 @@
 const { abs, cos, sin, acos, atan2, atan, sqrt, pow, PI } = Math;
 
+const listeners = [];
+export const profiles = {};
+
+addBoardChangeListener(() => {
+    profiles.z = {
+        width: board.length,
+        height: board.width,
+    };
+    profiles.yUp = {
+        width: board.length,
+        height: -board.thickness,
+    };
+    profiles.x = {
+        width: board.width,
+        height: -board.thickness,
+        half: true
+    };
+    profiles.x0 = {
+        height: (evaluate(board.yDown, roots(board.yDown, {x: board.z[3].x})[0]) - evaluate(board.yUp, roots(board.yUp, {x: board.z[3].x})[0])) * board.thickness,
+        width: board.z[3].y * board.width,
+        half: true
+    }
+});
+
+export function commitBoardChanges() {
+    for (const listener of listeners) {
+        listener(board);
+    }
+}
+
+export function addBoardChangeListener(func) {
+    listeners.push(func);
+}
+
 export const board = await (await fetch('board.json')).json();
+commitBoardChanges();
 
 const nbSlices=30, nbPoints=15;
 const nbPointsPerSlice = nbPoints * 4 * 2;
 
 const slices = Array.from({length: nbSlices}, (x, i) => (1 - cos(PI * (i / (nbSlices - 1))))/2);
+
 
 /**
  * Cube root function yielding real roots

@@ -7,13 +7,12 @@ const {board} = surf;
 const svg = document.getElementById('vis');
 const canvas = document.getElementById('threed');
 
-
-function update() {
+surf.addBoardChangeListener(() => {
     surf.getPositions(trid.getPositionsAttribute())
     trid.update();
-}
+})
 
-ui.setup(board, update, 'z');
+ui.setProfile('z');
 const positions = surf.getPositions();
 const indices = surf.getIndices();
 trid.display3D(positions, indices, board);
@@ -34,7 +33,7 @@ const [top, side, front] = document.getElementById('positions').children;
 function moveTo({profile, ...destination}) {
     if (trid.alreadyWellOriented(destination)) return;
     trid.controls.removeEventListener('change', hideSvg);
-    ui.setup(board, update, profile);
+    ui.setProfile(profile);
     showSvg();
     trid.tweenCameraTo(destination)
         .onComplete(() => trid.controls.addEventListener('change', hideSvg));
