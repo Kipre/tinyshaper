@@ -54,8 +54,17 @@ export function display3D(position, indices, board) {
     geometry.setIndex(Array.from(indices));
     geometry.computeVertexNormals();
 
-    const mesh = new THREE.Mesh(geometry,material);
+
+    const mesh = new THREE.Mesh(geometry, material);
+    // const edges = new THREE.EdgesGeometry( geometry, 0 );
+    // const mesh = new THREE.LineSegments(edges, material);
+    // const mesh = new THREE.Points(geometry, new THREE.PointsMaterial({ color: 0xFFFFFF, size: 1 }))
     scene.add(mesh);
+
+    const other = new THREE.Mesh(geometry, material);
+    // const other = new THREE.LineSegments(edges, material);
+    other.applyMatrix4(new THREE.Matrix4().makeScale(-1, 1, 1));
+    scene.add(other);
 
     onResize();
     animate();

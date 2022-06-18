@@ -38,7 +38,7 @@ export const board = await (await fetch('board.json')).json();
 commitBoardChanges();
 
 const nbSlices=30, nbPoints=15;
-const nbPointsPerSlice = nbPoints * 4 * 2;
+const nbPointsPerSlice = nbPoints * 4 + 1;
 
 const slices = Array.from({length: nbSlices}, (x, i) => (1 - cos(PI * (i / (nbSlices - 1))))/2);
 
@@ -74,9 +74,6 @@ export function roots(points, {x, y}) {
 
     if (target === pa) return [0];
     if (target === pd) return [1];
-    
-
-    
 
 
     let d = -pa + 3 * pb - 3 * pc + pd,
@@ -170,10 +167,10 @@ function getY(points, x) {
     return evaluate(points, roots(points, {x})[0]).y;
 }
 
-function projectSegment(points, last=false) {
+function projectSegment(points) {
     const result = [];
-    const step = last ? 1/(nbPoints - 1) : 1/nbPoints;
-    for (let t=0; t < 1; t += step) {
+    const step = 1/nbPoints;
+    for (let t=0; t + (step / 2) < 1; t += step) {
         result.push(evaluate(points, t));
     }
     return result;
@@ -237,43 +234,40 @@ export function getPositions(attribute) {
         zPosition *= yRatio;
 
         const currentX = 0.5 - x;
-        const end = idx + 3* nbPointsPerSlice - 1;
-        let inv = end;
+        const end = idx + 3* nbPointsPerSlice;
         let i = 0;
-        while (idx < inv - 4) {
+        while (idx < end) {
             const x = cut[i].x* xFactor,
                 y = cut[i++].y* yFactor + zPosition;
             positions[idx++] = x;
             positions[idx++] = currentX;
             positions[idx++] = y;
-
-            positions[inv--] = y;
-            positions[inv--] = currentX;
-            positions[inv--] = - x;
         }
-        idx = end + 1;
     }
     
     return positions;
 }
 
 export function getIndices() {
-    const indices = new Uint16Array((nbSlices - 1) * nbPointsPerSlice * 6);
+    const logitudinal = nbSlices - 1;
+    const perpendicular = nbPointsPerSlice - 1;
+    
+    const indices = new Uint16Array(logitudinal * perpendicular * 6);
 
     let idx = 0;
-    for (let s=0; s<nbSlices-1; s++) {
-        for (let p=0; p<nbPointsPerSlice; p++) {
-            const np = (p+1) % nbPointsPerSlice; // next point in the slice
+    for (let s=0; s<logitudinal; s++) {
+        for (let p=0; p<perpendicular; p++) {
 
-            const a = nbPointsPerSlice*s + p;
-            const d = nbPointsPerSlice*(s+1) + np;
+            const point = s * nbPointsPerSlice + p;
+            const nextPoint = point + 1;
+            const pointInNextSlice = point + nbPointsPerSlice;
 
-            indices[idx++] = a;
-            indices[idx++] = nbPointsPerSlice*(s+1) + p;
-            indices[idx++] = d;
-            indices[idx++] = a;
-            indices[idx++] = d;
-            indices[idx++] = nbPointsPerSlice*s + np;
+            indices[idx++] = point;
+            indices[idx++] = pointInNextSlice;
+            indices[idx++] = nextPoint;
+            indices[idx++] = nextPoint;
+            indices[idx++] = pointInNextSlice;
+            indices[idx++] = pointInNextSlice + 1;
         }
     }
     return indices;
