@@ -8,10 +8,11 @@ addBoardChangeListener(() => {
         width: board.length,
         height: board.width,
     };
-    profiles.yUp = {
+    profiles.y = {
         width: board.length,
         height: -board.thickness,
     };
+    profiles.yUp = profiles.y;
     profiles.x = {
         width: board.width,
         height: -board.thickness,

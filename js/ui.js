@@ -16,7 +16,11 @@ const state = {
 
 export function setProfile(profile) {
     state.profile = profile;
-    points = board[state.profile];
+    if (profile != 'y') {
+        points = board[state.profile];
+    } else {
+        points = [...board['yUp'], board['yUp'].at(-1), board['yDown'].at(-1), ...board['yDown'].reverse()];
+    }
     draggable();
 }
 
@@ -34,7 +38,7 @@ let scale = ({x, y})=>({x, y})
 , unscale = scale;
 
 
-function updateViewport() {
+export function updateViewport() {
     const {width, height, half} = profiles[state.profile];
     const {clientWidth, clientHeight} = svg.node();
     const {padding} = config;
@@ -141,6 +145,3 @@ function draggable() {
         .on("end", ()=>svg.style("cursor", "grab"))
         .on("start.render drag.render end.render", update));
 }
-
-
-window.addEventListener('resize', updateViewport);

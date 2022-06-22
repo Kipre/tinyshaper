@@ -42,3 +42,8 @@ function moveTo({profile, ...destination}) {
 top.addEventListener('click', () => moveTo(trid.coords.top));
 side.addEventListener('click', () => moveTo(trid.coords.side));
 front.addEventListener('click', () => moveTo(trid.coords.front));
+
+window.addEventListener('resize', () => {
+    trid.onResize();
+    ui.updateViewport();
+});

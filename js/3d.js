@@ -6,7 +6,7 @@ import {config} from './ui.js';
 
 export const coords = {
     top: {profile: 'z', x: 0, y:0, z: 5, xUp: 1, yUp: 0, zUp: 0, zoom: 1},
-    side: {profile: 'yUp', x: -5, y:0, z: 0, xUp: 0, yUp: 0, zUp: 1, zoom: 1},
+    side: {profile: 'y', x: -5, y:0, z: 0, xUp: 0, yUp: 0, zUp: 1, zoom: 1},
     front: {profile: 'x', x: 0, y:-5, z: 0, xUp: 0, yUp: 0, zUp: 1, zoom: 3},
 };
 
@@ -84,7 +84,7 @@ function halves(width, height) {
     return {x, y};
 }
 
-function onResize() {
+export function onResize() {
     const parent = document.querySelector('.content');
     const width = parent.offsetWidth,
         height = parent.offsetHeight;
@@ -142,5 +142,3 @@ export function alreadyWellOriented(destination) {
             return false;
     return true;
 }
-
-window.addEventListener('resize', onResize);
