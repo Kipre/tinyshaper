@@ -19,7 +19,7 @@ export function setProfile(profile) {
     if (profile != 'y') {
         points = board[state.profile];
     } else {
-        points = [...board['yUp'], board['yUp'].at(-1), board['yDown'].at(-1), ...board['yDown'].reverse()];
+        points = [...board['yUp'], board['yUp'].at(-1), board['yDown'].at(-1), ...[...board['yDown']].reverse()];
     }
     draggable();
 }
