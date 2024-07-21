@@ -27,17 +27,19 @@ controls.noPan = true;
 const renderer = new THREE.WebGLRenderer({ canvas, alpha: true });
 renderer.setPixelRatio(window.devicePixelRatio);
 
-const material = new THREE.MeshPhongMaterial();
+const material = new THREE.MeshStandardMaterial();
 
 const light = new THREE.PointLight();
 light.position.set(10, 10, 10);
+light.intensity = 100;
 scene.add(light);
 
-const light2 = new THREE.PointLight();
+const light2 = new THREE.PointLight(0x8080ff, 50, 0);
 light2.position.set(-10, -10, -5);
 scene.add(light2);
 
 const ambient = new THREE.AmbientLight(0x404040);
+ambient.intensity = 4;
 scene.add(ambient);
 
 // const axesHelper = new THREE.AxesHelper( 1 );
