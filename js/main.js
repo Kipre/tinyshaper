@@ -26,21 +26,21 @@ const hideSvg = () => {
 	trid.controls.removeEventListener("change", hideSvg);
 };
 
-const [top, side, front] = document.getElementById("positions").children;
+const [top, side, front, back] = document.getElementById("positions").children;
 
 function moveTo({ profile, ...destination }) {
 	if (trid.alreadyWellOriented(destination)) return;
-	trid.controls.removeEventListener("change", hideSvg);
 	ui.setProfile(profile);
 	showSvg();
 	trid
 		.tweenCameraTo(destination)
-		.onComplete(() => trid.controls.addEventListener("change", hideSvg));
+		.onComplete(() => trid.controls.addEventListener("change", hideSvg, {once: true}));
 }
 
 top.addEventListener("click", () => moveTo(trid.coords.top));
 side.addEventListener("click", () => moveTo(trid.coords.side));
 front.addEventListener("click", () => moveTo(trid.coords.front));
+back.addEventListener("click", () => moveTo(trid.coords.back));
 
 window.addEventListener("resize", () => {
 	trid.onResize();

@@ -39,7 +39,7 @@ body {
 }
 
 body {
-  font-family: "Roboto", sans-serif;
+  font-family: "Tahoma", sans-serif;
   display: grid;
   grid-template: auto / minmax(10rem, 15%) auto;
   background: var(--secondary-000);

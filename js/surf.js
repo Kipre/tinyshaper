@@ -20,8 +20,8 @@ addBoardChangeListener(() => {
 	};
 	profiles.x0 = {
 		height:
-			(evaluate(board.yDown, roots(board.yDown, { x: board.z[3].x })[0]) -
-				evaluate(board.yUp, roots(board.yUp, { x: board.z[3].x })[0])) *
+			(evaluate(board.yDown, roots(board.yDown, { x: board.z[3].x })[0]).y -
+				evaluate(board.yUp, roots(board.yUp, { x: board.z[3].x })[0]).y) *
 			board.thickness,
 		width: board.z[3].y * board.width,
 		half: true,
