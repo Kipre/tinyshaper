@@ -2,11 +2,10 @@ import * as d3 from "d3";
 import {
   profiles,
   board,
-  roots,
   siblingPosition,
-  evaluate,
   commitBoardChanges,
 } from "./surf.js";
+import { coords } from "./config.js";
 
 export const config = {
   pointStrokeWidth: 1,
@@ -23,9 +22,9 @@ const state = {
 
 export function setProfile(profile) {
   state.profile = profile;
-  if (profile != "y") {
-    points = board[state.profile];
-  } else {
+  points = board[state.profile];
+
+  if (profile === "y") {
     points = [
       ...board["yUp"],
       board["yUp"].at(-1),
@@ -45,24 +44,53 @@ const svg = d3
 
 const bottomAxis = svg.append("g");
 const leftAxis = svg.append("g");
+
 let scale = ({ x, y }) => ({ x, y }),
   unscale = scale;
 
-export function updateViewport() {
+/**
+ * @param {number?} maybeZoom
+ * @param {Vector3} target
+ */
+export function updateViewport(maybeZoom, target) {
+  state.pivoted = false;
+
+  const defaultProfileCoords = Object.values(coords).find(
+    (x) => x.profile === state.profile,
+  );
+  const defaultZoom = defaultProfileCoords.zoom;
+
+  const [xPan, yPan] = [target?.y ?? 0, target?.z ?? 0];
+  const zoom = maybeZoom ?? defaultZoom;
+
   const { width, height, half } = profiles[state.profile.slice(0, 1)];
   const { clientWidth, clientHeight } = svg.node();
+  const aspectRatio = height / width;
+
   const { padding } = config;
-  [state.pivoted, xScale] = [false, clientWidth - 2 * padding];
-  let xHalf = padding;
-  const yHalf = clientHeight / 2;
+  const zoomComponent = zoom / defaultZoom;
+
+
+  const effectiveWidth = clientWidth - 2 * padding;
+
+  // 0.5 is half of the length of the profile as all profiles are normalized
+  const zoomCentering = 0.5 * (1 - zoomComponent) * effectiveWidth;
+
+  xScale = zoomComponent * effectiveWidth;
+
+  const panRatio = xScale;
+
+  let xHalf = padding + zoomCentering + xPan * panRatio;
+  const yHalf = clientHeight / 2 + yPan * panRatio;
+
   if (half) {
     xHalf = clientWidth / 2;
-    const extra = state.profile === "x0" ? profiles.x0.width / profiles.x.width : 1;
-    console.log(extra);
-    [state.pivoted, xScale] = [false, extra * xHalf - padding];
+    const extra =
+      state.profile === "x0" ? profiles.x0.width / profiles.x.width : 1;
+    xScale = zoomComponent * extra * xHalf - padding;
   }
 
-  yScale = xScale * (height / width);
+  yScale = xScale * aspectRatio;
 
   scale = ({ x, y }) => ({
     x: x * xScale + xHalf,

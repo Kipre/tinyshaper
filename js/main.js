@@ -1,6 +1,7 @@
 import * as ui from "./ui.js";
 import * as surf from "./surf.js";
 import * as trid from "./3d.js";
+import {coords} from "./config.js";
 
 const { board } = surf;
 
@@ -34,13 +35,13 @@ function moveTo({ profile, ...destination }) {
 	showSvg();
 	trid
 		.tweenCameraTo(destination)
-		.onComplete(() => trid.controls.addEventListener("change", hideSvg, {once: true}));
+		//.onComplete(() => trid.controls.addEventListener("change", hideSvg, {once: true}));
 }
 
-top.addEventListener("click", () => moveTo(trid.coords.top));
-side.addEventListener("click", () => moveTo(trid.coords.side));
-front.addEventListener("click", () => moveTo(trid.coords.front));
-back.addEventListener("click", () => moveTo(trid.coords.back));
+top.addEventListener("click", () => moveTo(coords.top));
+side.addEventListener("click", () => moveTo(coords.side));
+front.addEventListener("click", () => moveTo(coords.front));
+back.addEventListener("click", () => moveTo(coords.back));
 
 window.addEventListener("resize", () => {
 	trid.onResize();

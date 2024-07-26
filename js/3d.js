@@ -1,15 +1,8 @@
 import * as THREE from "three";
 import * as TWEEN from "tween";
 import { TrackballControls } from "TrackballControls";
-import * as surf from "./surf.js";
-import { config } from "./ui.js";
-
-export const coords = {
-  top: { profile: "z", x: 0, y: 0, z: 5, xUp: 1, yUp: 0, zUp: 0, zoom: 1 },
-  side: { profile: "y", x: -5, y: 0, z: 0, xUp: 0, yUp: 0, zUp: 1, zoom: 1 },
-  front: { profile: "x", x: 0, y: -5, z: 0, xUp: 0, yUp: 0, zUp: 1, zoom: 3 },
-  back: { profile: "x0", x: 0, y: 5, z: 0, xUp: 0, yUp: 0, zUp: 1, zoom: 3 },
-};
+import { config, updateViewport } from "./ui.js";
+import { coords } from "./config.js";
 
 const scene = new THREE.Scene();
 const canvas = document.getElementById("threed");
@@ -23,8 +16,18 @@ camera.up.set(0, 0, 1);
 export const controls = new TrackballControls(camera, canvas);
 controls.rotateSpeed = 2.0;
 controls.zoomSpeed = 1.2;
-//controls.noPan = true;
 controls.panSpeed = 30;
+//controls.staticMoving = true;
+
+controls.addEventListener("change", (e) => {
+  console.log(
+    //  e.target.object.position,
+    //  e.target.object.up,
+    e.target.object.zoom,
+    e.target.target,
+  );
+  updateViewport(e.target.object.zoom, e.target.target);
+});
 
 const renderer = new THREE.WebGLRenderer({ canvas, alpha: true });
 renderer.setPixelRatio(window.devicePixelRatio);
@@ -52,7 +55,7 @@ const geometry = new THREE.BufferGeometry();
 export function display3D(position, indices, board) {
   // recompute the required zoom for the x profile
   const { length, width } = board;
-  coords.front.zoom = length / width / 2;
+  coords.front.zoom = coords.back.zoom = length / width / 2;
 
   geometry.setAttribute("position", new THREE.BufferAttribute(position, 3));
   geometry.setIndex(Array.from(indices));
@@ -126,7 +129,6 @@ function getCoords(camera) {
 
 function setCamera({ x, y, z, xUp, yUp, zUp, zoom, a, panX, panY, panZ }) {
   camera.position.set(x, y, z);
-  console.log(camera);
   camera.up.set(xUp, yUp, zUp);
   camera.zoom = zoom;
   camera.updateProjectionMatrix();

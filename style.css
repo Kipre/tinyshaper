@@ -95,7 +95,6 @@ button {
 svg#vis {
   pointer-events: none;
   opacity: var(--svg-opacity);
-  overflow: visible;
 }
 
 svg#vis.hidden {
