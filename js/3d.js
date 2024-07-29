@@ -1,15 +1,25 @@
+// @ts-check
 import * as THREE from "three";
 import * as TWEEN from "tween";
 import { TrackballControls } from "TrackballControls";
-import { config, updateViewport } from "./ui.js";
+import { config, updateViewport, state } from "./ui.js";
 import { coords } from "./config.js";
 
 const scene = new THREE.Scene();
-const canvas = document.getElementById("threed");
+const canvas = /** @type {HTMLCanvasElement} */ (
+  document.getElementById("threed")
+);
 
 const { x: pad, y: vert } = halves(canvas.offsetWidth, canvas.offsetHeight);
 
-const camera = new THREE.OrthographicCamera(-pad, pad, vert, -vert, -1, 1000);
+export const camera = new THREE.OrthographicCamera(
+  -pad,
+  pad,
+  vert,
+  -vert,
+  -1,
+  1000,
+);
 camera.position.set(-1.5, -0.5, 1);
 camera.up.set(0, 0, 1);
 
@@ -18,16 +28,6 @@ controls.rotateSpeed = 2.0;
 controls.zoomSpeed = 1.2;
 controls.panSpeed = 30;
 //controls.staticMoving = true;
-
-controls.addEventListener("change", (e) => {
-  console.log(
-    //  e.target.object.position,
-    //  e.target.object.up,
-    e.target.object.zoom,
-    e.target.target,
-  );
-  updateViewport(e.target.object.zoom, e.target.target);
-});
 
 const renderer = new THREE.WebGLRenderer({ canvas, alpha: true });
 renderer.setPixelRatio(window.devicePixelRatio);
@@ -158,11 +158,4 @@ export function tweenCameraTo(destination) {
     .easing(TWEEN.Easing.Quadratic.Out)
     .onUpdate(setCamera)
     .start();
-}
-
-export function alreadyWellOriented(destination) {
-  const actualPositions = getCoords(camera);
-  for (const axis in destination)
-    if (actualPositions[axis] - destination[axis] > 10e-20) return false;
-  return true;
 }

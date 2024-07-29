@@ -1,3 +1,4 @@
+// @ts-check
 import * as d3 from "d3";
 import {
   profiles,
@@ -6,6 +7,8 @@ import {
   commitBoardChanges,
 } from "./surf.js";
 import { coords } from "./config.js";
+import { Vector3 } from "three";
+/** @import { ProfileKey, ProfileInfo } from "./config.js" */
 
 export const config = {
   pointStrokeWidth: 1,
@@ -15,16 +18,20 @@ export const config = {
   padding: 20,
 };
 
-const state = {
-  profile: "z",
+/** @type {{profile: ProfileKey, pivoted: boolean}} */
+export const state = {
+  profile: "top",
   pivoted: false,
 };
 
+/**
+ * @param {ProfileKey} profile
+ */
 export function setProfile(profile) {
   state.profile = profile;
-  points = board[state.profile];
+  points = board[coords[profile].profile];
 
-  if (profile === "y") {
+  if (profile === "side") {
     points = [
       ...board["yUp"],
       board["yUp"].at(-1),
@@ -49,27 +56,29 @@ let scale = ({ x, y }) => ({ x, y }),
   unscale = scale;
 
 /**
- * @param {number?} maybeZoom
- * @param {Vector3} target
+ * @param {ProfileKey} profileKey
+ * @param {number} [maybeZoom]
+ * @param {Vector3?} [target]
  */
-export function updateViewport(maybeZoom, target) {
-  state.pivoted = false;
+export function updateViewport(profileKey, maybeZoom, target) {
+  const profileInfo = coords[profileKey];
+  const { width, height, half, bottom } = profiles[profileKey];
 
-  const defaultProfileCoords = Object.values(coords).find(
-    (x) => x.profile === state.profile,
-  );
-  const defaultZoom = defaultProfileCoords.zoom;
+  const defaultZoom = profileInfo.zoom;
 
-  const [xPan, yPan] = [target?.y ?? 0, target?.z ?? 0];
+  const [xPan, yPan] = target
+    ? [profileInfo.getXPan(target), profileInfo.getYPan(target)]
+    : [0, 0];
   const zoom = maybeZoom ?? defaultZoom;
 
-  const { width, height, half } = profiles[state.profile.slice(0, 1)];
-  const { clientWidth, clientHeight } = svg.node();
+  const { clientWidth, clientHeight } =
+    /** @type {HTMLCanvasElement } */
+    (svg.node());
+
   const aspectRatio = height / width;
 
   const { padding } = config;
   const zoomComponent = zoom / defaultZoom;
-
 
   const effectiveWidth = clientWidth - 2 * padding;
 
@@ -81,13 +90,17 @@ export function updateViewport(maybeZoom, target) {
   const panRatio = xScale;
 
   let xHalf = padding + zoomCentering + xPan * panRatio;
-  const yHalf = clientHeight / 2 + yPan * panRatio;
+  let yHalf = clientHeight / 2 + yPan * panRatio;
 
   if (half) {
-    xHalf = clientWidth / 2;
-    const extra =
-      state.profile === "x0" ? profiles.x0.width / profiles.x.width : 1;
-    xScale = zoomComponent * extra * xHalf - padding;
+    const clipSpaceRatio = board.length / width;
+    const smallProfileScale = width / profiles.front.width;
+    xScale = smallProfileScale * 0.5 * zoomComponent * effectiveWidth;
+    xHalf =
+      padding +
+      zoomCentering +
+      (xPan * clipSpaceRatio + 1 / smallProfileScale) * xScale;
+    yHalf = clientHeight / 2 + yPan * clipSpaceRatio * xScale;
   }
 
   yScale = xScale * aspectRatio;
@@ -149,7 +162,7 @@ function update() {
 }
 
 function draggable() {
-  updateViewport();
+  updateViewport(state.profile);
 
   function dragSubject(event) {
     const [px, py] = d3.pointer(event.sourceEvent, svg.node());
