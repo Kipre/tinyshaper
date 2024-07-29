@@ -75,8 +75,6 @@ export function updateViewport(profileKey, maybeZoom, target) {
     /** @type {HTMLCanvasElement } */
     (svg.node());
 
-  const aspectRatio = height / width;
-
   const { padding } = config;
   const zoomComponent = zoom / defaultZoom;
 
@@ -85,25 +83,18 @@ export function updateViewport(profileKey, maybeZoom, target) {
   // 0.5 is half of the length of the profile as all profiles are normalized
   const zoomCentering = 0.5 * (1 - zoomComponent) * effectiveWidth;
 
-  xScale = zoomComponent * effectiveWidth;
+  const clipSpaceRatio = board.length / width;
+  const smallProfileScale = half ? (0.5 * width) / profiles.front.width : 1;
 
-  const panRatio = xScale;
+  xScale = smallProfileScale * zoomComponent * effectiveWidth;
+  yScale = xScale * height / width;
 
-  let xHalf = padding + zoomCentering + xPan * panRatio;
-  let yHalf = clientHeight / 2 + yPan * panRatio;
+  const lastTerm = half ? 0.5 * xScale / smallProfileScale : 0;
 
-  if (half) {
-    const clipSpaceRatio = board.length / width;
-    const smallProfileScale = width / profiles.front.width;
-    xScale = smallProfileScale * 0.5 * zoomComponent * effectiveWidth;
-    xHalf =
-      padding +
-      zoomCentering +
-      (xPan * clipSpaceRatio + 1 / smallProfileScale) * xScale;
-    yHalf = clientHeight / 2 + yPan * clipSpaceRatio * xScale;
-  }
+  const xHalf =
+    padding + zoomCentering + xPan * xScale * clipSpaceRatio + lastTerm;
+  const yHalf = clientHeight / 2 + yPan * xScale * clipSpaceRatio;
 
-  yScale = xScale * aspectRatio;
 
   scale = ({ x, y }) => ({
     x: x * xScale + xHalf,
