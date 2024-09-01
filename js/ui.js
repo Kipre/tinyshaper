@@ -55,7 +55,7 @@ const bottomAxis = svg
   .append("g")
   .attr("transform", `translate(0,${clientHeight - 2 * config.padding})`);
 
-const leftAxis = svg.append("g");
+//const leftAxis = svg.append("g");
 
 let scale = ({ x, y }) => ({ x, y }),
   unscale = scale;
@@ -161,7 +161,9 @@ function update() {
   const start = scale({ x: 0, y: 0 });
   const stop = scale({ x: 1, y: 0 });
 
-  bottomAxis.call(d3.axisBottom(d3.scaleLinear([0, currentWidth], [start.x, stop.x])));
+  bottomAxis.call(
+    d3.axisBottom(d3.scaleLinear([0, currentWidth], [start.x, stop.x])),
+  );
 }
 
 function draggable() {
@@ -178,7 +180,7 @@ function draggable() {
     svg.style("cursor", "hand").style("cursor", "grab");
     const { continuous, freezeX, freezeY } = points[idx];
     const move = (point, dx, dy) => {
-      point.x += (dx / xScale) * !freezeX;;
+      point.x += (dx / xScale) * !freezeX;
       point.y += (dy / yScale) * !freezeY;
     };
     let direction, sibling;

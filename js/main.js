@@ -11,7 +11,6 @@ const { board } = surf;
 const svg = /** @type {HTMLElement & SVGElement} */ (
   document.getElementById("vis")
 );
-const canvas = document.getElementById("threed");
 
 surf.addBoardChangeListener(() => {
   surf.getPositions(trid.getPositionsAttribute());
@@ -77,6 +76,29 @@ top.addEventListener("click", () => moveTo("top"));
 side.addEventListener("click", () => moveTo("side"));
 front.addEventListener("click", () => moveTo("front"));
 back.addEventListener("click", () => moveTo("back"));
+
+const dimensions = document.querySelectorAll(".dimensions input");
+const [length, width, thickness] = dimensions;
+
+length.value = board.length;
+width.value = board.width;
+thickness.value = board.thickness;
+
+for (const input of dimensions) {
+  input.addEventListener("change", (e) => {
+    const dim = e.target.id;
+    board[dim] = e.target.value;
+    surf.commitBoardChanges();
+
+    // recompute the required zoom for the x profile
+    const { length, width } = board;
+    coords.front.zoom = coords.back.zoom = length / width / 2;
+    trid.camera.zoom = coords[ui.state.profile].zoom;
+    trid.camera.updateProjectionMatrix();
+
+    ui.updateViewport(ui.state.profile);
+  });
+}
 
 window.addEventListener("resize", () => {
   trid.onResize();
