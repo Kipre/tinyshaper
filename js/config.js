@@ -1,6 +1,6 @@
+// @ts-check
 import { Vector3 } from "three";
 
-// @ts-check
 const allZero = { x: 0, y: 0, z: 0, xUp: 0, yUp: 0, zUp: 0 };
 
 /**

@@ -50,8 +50,8 @@ export function addBoardChangeListener(func) {
 export const board = await (await fetch("board.json")).json();
 commitBoardChanges();
 
-const nbSlices = 30,
-  nbPoints = 15;
+const nbSlices = 30;
+const nbPoints = 15;
 const nbPointsPerSlice = nbPoints * 4 + 1;
 
 const slices = Array.from(

@@ -23,8 +23,7 @@
     --secondary-100: #332b34;
     --secondary-300: #fce6ff;
     --secondary-700: #634085;
-    --secondary-500: #634085;
-
+    --secondary-500: #583b74;
     --link-color: #85c0f3;
   }
 }
@@ -41,7 +40,7 @@ body {
 body {
   font-family: "Tahoma", sans-serif;
   display: grid;
-  grid-template: auto / minmax(10rem, 15%) auto;
+  grid-template: auto / minmax(16rem, 15%) auto;
   background: var(--secondary-000);
   color: var(--primary);
 }
@@ -50,8 +49,19 @@ a {
   color: var(--link-color);
 }
 
-a:not(:last-of-type)::after {
-  content: " | ";
+.title {
+  text-align: center;
+}
+
+.title > img {
+  width: 80%;
+  margin-top: 1rem;
+}
+
+#positions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.3rem;
 }
 
 .toolbar {
@@ -60,19 +70,34 @@ a:not(:last-of-type)::after {
   grid-row: 1;
   grid-column: 1;
   background: var(--secondary-100);
-  text-align: center;
+  /*text-align: center;*/
+  padding: 0 1rem 0 1rem;
+}
+
+hr {
+  width: 100%;
+  border-bottom: 1px;
 }
 
 footer {
   margin-top: auto;
   padding-bottom: 1em;
   font-size: var(--font-size);
+  text-align: center;
 }
 
 .content {
   grid-row: 1;
   grid-column: 2;
   position: relative;
+  background-image: url("tile-light.svg");
+  background-size: 300px 300px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .content {
+    background-image: url("tile-dark.svg");
+  }
 }
 
 .content > * {
@@ -81,13 +106,32 @@ footer {
   height: 100%;
 }
 
-button {
-  background: var(--secondary-500);
+button,
+input {
   color: var(--primary);
   border-radius: 5px;
+}
+
+button {
+  background: var(--secondary-500);
   padding: 6px;
-  margin: 5px 0;
+  /*margin: 5px 5px;*/
   width: 100%;
+  cursor: pointer;
+}
+
+input {
+  background: var(--secondary-400);
+  margin: 5px 0;
+  width: 7rem;
+}
+
+.dimensions {
+  text-align: right;
+}
+
+.dimensions > label {
+  display: block;
 }
 
 /* SVG */

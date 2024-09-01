@@ -49,11 +49,18 @@ const svg = d3
   .select("#vis")
   .call((svg) => svg.append("path").attr("class", "u-path"));
 
-const bottomAxis = svg.append("g");
+const { clientHeight } = /** @type {SVGElement} */ (svg.node());
+
+const bottomAxis = svg
+  .append("g")
+  .attr("transform", `translate(0,${clientHeight - 2 * config.padding})`);
+
 const leftAxis = svg.append("g");
 
 let scale = ({ x, y }) => ({ x, y }),
   unscale = scale;
+
+let currentWidth = 0;
 
 /**
  * @param {ProfileKey} profileKey
@@ -63,6 +70,7 @@ let scale = ({ x, y }) => ({ x, y }),
 export function updateViewport(profileKey, maybeZoom, target) {
   const profileInfo = coords[profileKey];
   const { width, height, half, bottom } = profiles[profileKey];
+  currentWidth = width;
 
   const defaultZoom = profileInfo.zoom;
 
@@ -87,14 +95,13 @@ export function updateViewport(profileKey, maybeZoom, target) {
   const smallProfileScale = half ? (0.5 * width) / profiles.front.width : 1;
 
   xScale = smallProfileScale * zoomComponent * effectiveWidth;
-  yScale = xScale * height / width;
+  yScale = (xScale * height) / width;
 
-  const lastTerm = half ? 0.5 * xScale / smallProfileScale : 0;
+  const lastTerm = half ? (0.5 * xScale) / smallProfileScale : 0;
 
   const xHalf =
     padding + zoomCentering + xPan * xScale * clipSpaceRatio + lastTerm;
   const yHalf = clientHeight / 2 + yPan * xScale * clipSpaceRatio;
-
 
   scale = ({ x, y }) => ({
     x: x * xScale + xHalf,
@@ -150,6 +157,11 @@ function update() {
     .attr("x2", ({ to }) => to.x)
     .attr("y2", ({ to }) => to.y)
     .classed("u-line", true);
+
+  const start = scale({ x: 0, y: 0 });
+  const stop = scale({ x: 1, y: 0 });
+
+  bottomAxis.call(d3.axisBottom(d3.scaleLinear([0, currentWidth], [start.x, stop.x])));
 }
 
 function draggable() {
@@ -166,7 +178,7 @@ function draggable() {
     svg.style("cursor", "hand").style("cursor", "grab");
     const { continuous, freezeX, freezeY } = points[idx];
     const move = (point, dx, dy) => {
-      point.x += (dx / xScale) * !freezeX;
+      point.x += (dx / xScale) * !freezeX;;
       point.y += (dy / yScale) * !freezeY;
     };
     let direction, sibling;
