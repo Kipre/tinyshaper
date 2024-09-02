@@ -82,7 +82,8 @@ for (const input of dimensions) {
     board[dim] = e.target.value;
     surf.commitBoardChanges();
 
-    // recompute the required zoom for the x profile
+    // recompute the required zoom for the x profile, should be applied only 
+    // conditionally
     const { length, width } = board;
     coords.front.zoom = coords.back.zoom = length / width / 2;
     trid.camera.zoom = coords[ui.state.profile].zoom;

@@ -60,7 +60,7 @@ export const hideSvg = () => {
   svgElement.classList.add("hidden");
 };
 
-const { clientHeight } = /** @type {SVGElement} */ (svg.node());
+const { clientHeight } = svgElement;
 
 const bottomAxis = svg
   .append("g")
@@ -90,9 +90,7 @@ export function updateViewport(profileKey, maybeZoom, target) {
     : [0, 0];
   const zoom = maybeZoom ?? defaultZoom;
 
-  const { clientWidth, clientHeight } =
-    /** @type {HTMLCanvasElement } */
-    (svg.node());
+  const { clientWidth, clientHeight } = svgElement;
 
   const { padding } = config;
   const zoomComponent = zoom / defaultZoom;
@@ -112,7 +110,12 @@ export function updateViewport(profileKey, maybeZoom, target) {
 
   const xHalf =
     padding + zoomCentering + xPan * xScale * clipSpaceRatio + lastTerm;
-  const yHalf = clientHeight / 2 + yPan * xScale * clipSpaceRatio;
+
+  // for the back profile we need to translate it vetically so that in sits in
+  // the right spot on the board
+  const bottomTerm = (-(bottom || 0) / height) * yScale;
+
+  const yHalf = clientHeight / 2 + yPan * xScale * clipSpaceRatio + bottomTerm;
 
   scale = ({ x, y }) => ({
     x: x * xScale + xHalf,

@@ -2,6 +2,13 @@
 const { abs, cos, sin, acos, atan2, atan, sqrt, pow, PI } = Math;
 import { coords, nbSlices, nbPoints, nbPointsPerSlice } from "./config.js";
 
+/**
+ * @typedef {Object} Board
+ * @property {number} length
+ * @property {number} width
+ * @property {number} thickness
+ */
+
 /** @import { ProfileKey } from "./config.js" */
 
 const listeners = [];
@@ -216,10 +223,9 @@ function project(points) {
 }
 
 /**
-  * @param positions {import("three").TypedArray}
-  */
+ * @param positions {import("three").TypedArray}
+ */
 export function getPositions(positions) {
-
   const xRatio = board.width / board.length,
     yRatio = board.thickness / board.length;
 

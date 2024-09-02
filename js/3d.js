@@ -41,18 +41,23 @@ const material = new THREE.MeshStandardMaterial({
   roughness: 0.2,
 });
 
-const light = new THREE.PointLight();
-light.position.set(10, 10, 10);
-light.intensity = 200;
-scene.add(light);
-
-const light2 = new THREE.PointLight(0x808090, 50, 0);
-light2.position.set(-10, -10, -5);
-scene.add(light2);
-
-const ambient = new THREE.AmbientLight(0x404040);
-ambient.intensity = 8;
-scene.add(ambient);
+for (const position of [
+  [0, 0, 1],
+  [0, 2, 0],
+  [1, 0, 0],
+  [1, 1, 0],
+  [0, 1, 1],
+  [0, 0, -1],
+  [0, -2, 0],
+  [-1, 0, 0],
+  [-1, 1, 0],
+  [0, -1, -1],
+]) {
+  const light = new THREE.PointLight();
+  light.position.set(...position);
+  light.intensity = 0.8;
+  scene.add(light);
+}
 
 const geometry = new THREE.BufferGeometry();
 geometry.setAttribute("position", new THREE.BufferAttribute(positionsArray, 3));
