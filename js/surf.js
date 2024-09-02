@@ -1,5 +1,7 @@
 // @ts-check
 const { abs, cos, sin, acos, atan2, atan, sqrt, pow, PI } = Math;
+import { coords, nbSlices, nbPoints, nbPointsPerSlice } from "./config.js";
+
 /** @import { ProfileKey } from "./config.js" */
 
 const listeners = [];
@@ -9,6 +11,10 @@ const listeners = [];
 export const profiles = {};
 
 addBoardChangeListener(() => {
+  // recompute the required zoom for the x profile
+  const { length, width } = board;
+  coords.front.zoom = coords.back.zoom = length / width / 2;
+
   profiles.top = {
     width: board.length,
     height: board.width,
@@ -49,10 +55,6 @@ export function addBoardChangeListener(func) {
 
 export const board = await (await fetch("board.json")).json();
 commitBoardChanges();
-
-const nbSlices = 30;
-const nbPoints = 15;
-const nbPointsPerSlice = nbPoints * 4 + 1;
 
 const slices = Array.from(
   { length: nbSlices },
@@ -213,13 +215,10 @@ function project(points) {
   return result;
 }
 
-export function getPositions(attribute) {
-  let positions;
-  if (!attribute) {
-    positions = new Float32Array(nbPointsPerSlice * nbSlices * 3);
-  } else {
-    positions = attribute.array;
-  }
+/**
+  * @param positions {import("three").TypedArray}
+  */
+export function getPositions(positions) {
 
   const xRatio = board.width / board.length,
     yRatio = board.thickness / board.length;

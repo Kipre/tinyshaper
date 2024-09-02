@@ -49,6 +49,17 @@ const svg = d3
   .select("#vis")
   .call((svg) => svg.append("path").attr("class", "u-path"));
 
+const svgElement = /** @type {SVGElement & HTMLElement} */ (svg.node());
+
+export const showSvg = () => {
+  document.documentElement.style.setProperty("--svg-opacity", "0");
+  svgElement.classList.remove("hidden");
+};
+
+export const hideSvg = () => {
+  svgElement.classList.add("hidden");
+};
+
 const { clientHeight } = /** @type {SVGElement} */ (svg.node());
 
 const bottomAxis = svg

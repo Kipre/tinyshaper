@@ -1,6 +1,12 @@
 // @ts-check
 import { Vector3 } from "three";
 
+export const eps = 1e-5;
+
+export const nbSlices = 30;
+export const nbPoints = 15;
+export const nbPointsPerSlice = nbPoints * 4 + 1;
+
 const allZero = { x: 0, y: 0, z: 0, xUp: 0, yUp: 0, zUp: 0 };
 
 /**

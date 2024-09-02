@@ -3,7 +3,12 @@ import * as THREE from "three";
 import * as TWEEN from "tween";
 import { TrackballControls } from "TrackballControls";
 import { config } from "./ui.js";
-import { coords } from "./config.js";
+import { coords, nbPointsPerSlice, nbSlices } from "./config.js";
+import { getIndices } from "./surf.js";
+
+// buffer holding the mesh positions data
+export const positionsArray = new Float32Array(nbPointsPerSlice * nbSlices * 3);
+const indices = getIndices();
 
 const scene = new THREE.Scene();
 const canvas = /** @type {HTMLCanvasElement} */ (
@@ -50,14 +55,10 @@ ambient.intensity = 8;
 scene.add(ambient);
 
 const geometry = new THREE.BufferGeometry();
+geometry.setAttribute("position", new THREE.BufferAttribute(positionsArray, 3));
+geometry.setIndex(Array.from(indices));
 
-export function display3D(position, indices, board) {
-  // recompute the required zoom for the x profile
-  const { length, width } = board;
-  coords.front.zoom = coords.back.zoom = length / width / 2;
-
-  geometry.setAttribute("position", new THREE.BufferAttribute(position, 3));
-  geometry.setIndex(Array.from(indices));
+export function display3D() {
   geometry.computeVertexNormals();
 
   const mesh = new THREE.Mesh(geometry, material);
@@ -66,10 +67,10 @@ export function display3D(position, indices, board) {
   // const mesh = new THREE.Points(geometry, new THREE.PointsMaterial({ color: 0xFFFFFF, size: 1 }))
   scene.add(mesh);
 
-  const other = new THREE.Mesh(geometry, material);
+  const otherSide = new THREE.Mesh(geometry, material);
   // const other = new THREE.LineSegments(edges, material);
-  other.applyMatrix4(new THREE.Matrix4().makeScale(-1, 1, 1));
-  scene.add(other);
+  otherSide.applyMatrix4(new THREE.Matrix4().makeScale(-1, 1, 1));
+  scene.add(otherSide);
 
   onResize();
   animate();
@@ -77,10 +78,6 @@ export function display3D(position, indices, board) {
 
 export function getPositionsAttribute() {
   return geometry.getAttribute("position");
-}
-
-export function update() {
-  geometry.getAttribute("position").needsUpdate = true;
 }
 
 function halves(width, height) {
