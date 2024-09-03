@@ -5,6 +5,7 @@ import {
   board,
   siblingPosition,
   commitBoardChanges,
+  modifyBoard,
 } from "./surf.js";
 import { coords } from "./config.js";
 import { Vector3 } from "three";
@@ -75,10 +76,10 @@ let currentWidth = 0;
 
 /**
  * @param {ProfileKey} profileKey
- * @param {number} [maybeZoom]
+ * @param {number?} [maybeZoom]
  * @param {Vector3?} [target]
  */
-export function updateViewport(profileKey, maybeZoom, target) {
+export function updateSvgLayer(profileKey, maybeZoom, target) {
   const profileInfo = coords[profileKey];
   const { width, height, half, bottom } = profiles[profileKey];
   currentWidth = width;
@@ -181,7 +182,7 @@ function update() {
 }
 
 function draggable() {
-  updateViewport(state.profile);
+  updateSvgLayer(state.profile);
 
   function dragSubject(event) {
     const [px, py] = d3.pointer(event.sourceEvent, svg.node());
@@ -244,4 +245,29 @@ function draggable() {
         .on("end", () => svg.style("cursor", "grab"))
         .on("start.render drag.render end.render", update),
     );
+}
+
+/**
+ * @param board {import("./surf.js").Board}
+ * @param onAfterModified {() => void}
+ */
+export function setupDimensionInputs(board, onAfterModified) {
+  const dimensions = /** @type {NodeListOf<HTMLInputElement>} */ (
+    document.querySelectorAll(".dimensions input")
+  );
+  const [length, width, thickness] = dimensions;
+
+  length.value = board.length.toString();
+  width.value = board.width.toString();
+  thickness.value = board.thickness.toString();
+
+  for (const input of dimensions) {
+    input.addEventListener("change", (e) => {
+      const dim = e.target.id;
+      modifyBoard((board) => (board[dim] = e.target.value));
+      onAfterModified();
+
+      updateSvgLayer(state.profile);
+    });
+  }
 }

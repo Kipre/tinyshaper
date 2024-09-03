@@ -56,6 +56,14 @@ export function commitBoardChanges() {
   }
 }
 
+/**
+ * @param modifier {(board: Board) => Board}
+ */
+export function modifyBoard(modifier) {
+  // board =
+  modifier(board);
+}
+
 export function addBoardChangeListener(func) {
   listeners.push(func);
 }

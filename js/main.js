@@ -37,7 +37,7 @@ const moveSvg = (e) => {
   )
     ui.hideSvg();
 
-  ui.updateViewport(profile, e.target.object.zoom, e.target.target);
+  ui.updateSvgLayer(profile, e.target.object.zoom, e.target.target);
 };
 
 /**
@@ -67,33 +67,17 @@ side.addEventListener("click", () => moveTo("side"));
 front.addEventListener("click", () => moveTo("front"));
 back.addEventListener("click", () => moveTo("back"));
 
-const dimensions = /** @type {NodeListOf<HTMLInputElement>} */ (
-  document.querySelectorAll(".dimensions input")
-);
-const [length, width, thickness] = dimensions;
-
-length.value = board.length;
-width.value = board.width;
-thickness.value = board.thickness;
-
-for (const input of dimensions) {
-  input.addEventListener("change", (e) => {
-    const dim = e.target.id;
-    board[dim] = e.target.value;
-    surf.commitBoardChanges();
-
-    // recompute the required zoom for the x profile, should be applied only 
-    // conditionally
-    const { length, width } = board;
-    coords.front.zoom = coords.back.zoom = length / width / 2;
-    trid.camera.zoom = coords[ui.state.profile].zoom;
-    trid.camera.updateProjectionMatrix();
-
-    ui.updateViewport(ui.state.profile);
-  });
-}
+ui.setupDimensionInputs(board, () => {
+  // recompute the required zoom for the x profile, should be applied only
+  // conditionally
+  const { length, width } = board;
+  coords.front.zoom = coords.back.zoom = length / width / 2;
+  trid.camera.zoom = coords[ui.state.profile].zoom;
+  trid.camera.updateProjectionMatrix();
+  surf.commitBoardChanges();
+});
 
 window.addEventListener("resize", () => {
   trid.onResize();
-  ui.updateViewport(ui.state.profile);
+  ui.updateSvgLayer(ui.state.profile);
 });
