@@ -27,8 +27,6 @@ const allZero = { x: 0, y: 0, z: 0, xUp: 0, yUp: 0, zUp: 0 };
  * @property {number} yUp
  * @property {number} zUp
  * @property {number} zoom
- * @property {(x: Vector3) => number} getXPan
- * @property {(x: Vector3) => number} getYPan
  */
 
 /** @type {Object.<ProfileKey, ProfileInfo>} */
@@ -39,8 +37,6 @@ export const coords = {
     z: 5,
     xUp: 1,
     zoom: 1,
-    getXPan: (x) => x["y"],
-    getYPan: (x) => x["x"],
   },
   side: {
     ...allZero,
@@ -48,8 +44,6 @@ export const coords = {
     x: -5,
     zUp: 1,
     zoom: 1,
-    getXPan: (x) => x["y"],
-    getYPan: (x) => x["z"],
   },
   front: {
     ...allZero,
@@ -57,8 +51,6 @@ export const coords = {
     y: -5,
     zUp: 1,
     zoom: 3,
-    getXPan: (x) => -x["x"],
-    getYPan: (x) => x["z"],
   },
   back: {
     ...allZero,
@@ -66,7 +58,5 @@ export const coords = {
     y: 5,
     zUp: 1,
     zoom: 3,
-    getXPan: (x) => x["x"],
-    getYPan: (x) => x["z"],
   },
 };

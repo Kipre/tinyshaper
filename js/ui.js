@@ -80,15 +80,20 @@ let currentWidth = 0;
  * @param {Vector3?} [target]
  */
 export function updateSvgLayer(profileKey, maybeZoom, target) {
-  const profileInfo = coords[profileKey];
-  const { width, height, half, bottom } = getBoardVisualisationProfile(board, profileKey);
+  const {
+    width,
+    height,
+    half,
+    bottom,
+    getXPan,
+    getYPan,
+    zoom: defaultZoom,
+  } = getBoardVisualisationProfile(board, profileKey);
+
   currentWidth = width;
 
-  const defaultZoom = profileInfo.zoom;
+  const [xPan, yPan] = target ? [getXPan(target), getYPan(target)] : [0, 0];
 
-  const [xPan, yPan] = target
-    ? [profileInfo.getXPan(target), profileInfo.getYPan(target)]
-    : [0, 0];
   const zoom = maybeZoom ?? defaultZoom;
 
   const { clientWidth, clientHeight } = svgElement;
@@ -122,10 +127,12 @@ export function updateSvgLayer(profileKey, maybeZoom, target) {
     x: x * xScale + xHalf,
     y: y * yScale + yHalf,
   });
+
   unscale = ({ x, y }) => ({
     x: (x - xHalf) / xScale,
     y: (y - yHalf) / yScale,
   });
+
   update();
 }
 

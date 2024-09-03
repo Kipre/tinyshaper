@@ -1,5 +1,6 @@
 // @ts-check
 const { abs, cos, sin, acos, atan, sqrt, pow, PI } = Math;
+import { Vector3 } from "three";
 import { coords, nbSlices, nbPoints, nbPointsPerSlice } from "./config.js";
 
 /**
@@ -30,7 +31,15 @@ import { coords, nbSlices, nbPoints, nbPointsPerSlice } from "./config.js";
 /** @import { ProfileKey } from "./config.js" */
 
 const listeners = [];
-/** @typedef {{width: number, height: number, half?: boolean, bottom?: number}} ProfileDimensions */
+/** @typedef {{
+ *   width: number,
+ *   height: number,
+ *   zoom: number,
+ *   getXPan: (x: Vector3) => number,
+ *   getYPan: (x: Vector3) => number,
+ *   half?: boolean,
+ *   bottom?: number,
+ * }} ProfileDimensions */
 
 /**
  * @param board {Board}
@@ -43,17 +52,26 @@ export function getBoardVisualisationProfile(board, profile) {
       return {
         width: board.length,
         height: board.width,
+        getXPan: (x) => x["y"],
+        getYPan: (x) => x["x"],
+        zoom: 1,
       };
     case "side":
       return {
         width: board.length,
         height: -board.thickness,
+        getXPan: (x) => x["y"],
+        getYPan: (x) => x["z"],
+        zoom: 1,
       };
     case "front":
       return {
         width: board.width,
         height: -board.thickness,
         half: true,
+        getXPan: (x) => -x["x"],
+        getYPan: (x) => x["z"],
+        zoom: board.length / board.width / 2,
       };
     case "back": {
       const bottom = evaluate(
@@ -68,6 +86,9 @@ export function getBoardVisualisationProfile(board, profile) {
         width: board.z[3].y * board.width,
         half: true,
         bottom: bottom * board.thickness,
+        getXPan: (x) => x["x"],
+        getYPan: (x) => x["z"],
+        zoom: board.length / board.width / 2,
       };
     }
     default:
