@@ -3,7 +3,7 @@ import * as THREE from "three";
 import * as TWEEN from "tween";
 import { TrackballControls } from "TrackballControls";
 import { config } from "./ui.js";
-import { coords, nbPointsPerSlice, nbSlices } from "./config.js";
+import { nbPointsPerSlice, nbSlices } from "./config.js";
 import { getIndices } from "./surf.js";
 
 // buffer holding the mesh positions data

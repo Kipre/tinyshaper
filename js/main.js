@@ -18,7 +18,7 @@ surf.addBoardChangeListener(() => {
   positionsAttribute.needsUpdate = true;
 });
 
-// update positions before rendering
+// update positions before first rendering
 surf.commitBoardChanges();
 trid.display3D();
 

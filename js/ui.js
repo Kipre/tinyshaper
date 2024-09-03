@@ -1,11 +1,11 @@
 // @ts-check
 import * as d3 from "d3";
 import {
-  profiles,
   board,
   siblingPosition,
   commitBoardChanges,
   modifyBoard,
+  getBoardVisualisationProfile,
 } from "./surf.js";
 import { coords } from "./config.js";
 import { Vector3 } from "three";
@@ -81,7 +81,7 @@ let currentWidth = 0;
  */
 export function updateSvgLayer(profileKey, maybeZoom, target) {
   const profileInfo = coords[profileKey];
-  const { width, height, half, bottom } = profiles[profileKey];
+  const { width, height, half, bottom } = getBoardVisualisationProfile(board, profileKey);
   currentWidth = width;
 
   const defaultZoom = profileInfo.zoom;
@@ -102,7 +102,7 @@ export function updateSvgLayer(profileKey, maybeZoom, target) {
   const zoomCentering = 0.5 * (1 - zoomComponent) * effectiveWidth;
 
   const clipSpaceRatio = board.length / width;
-  const smallProfileScale = half ? (0.5 * width) / profiles.front.width : 1;
+  const smallProfileScale = half ? (0.5 * width) / board.width : 1;
 
   xScale = smallProfileScale * zoomComponent * effectiveWidth;
   yScale = (xScale * height) / width;

@@ -1,53 +1,84 @@
 // @ts-check
-const { abs, cos, sin, acos, atan2, atan, sqrt, pow, PI } = Math;
+const { abs, cos, sin, acos, atan, sqrt, pow, PI } = Math;
 import { coords, nbSlices, nbPoints, nbPointsPerSlice } from "./config.js";
+
+/**
+ * @typedef {Object} ControlPoint
+ * @property {number} x
+ * @property {number} y
+ * @property {number} freezeX
+ * @property {number} freezeY
+ * @property {boolean} continuous
+ */
+
+/**
+ * @typedef {[ControlPoint, ControlPoint, ControlPoint, ControlPoint]} CubicBezierLine
+ */
 
 /**
  * @typedef {Object} Board
  * @property {number} length
  * @property {number} width
  * @property {number} thickness
+ * @property {CubicBezierLine} yUp
+ * @property {CubicBezierLine} yDown
+ * @property {CubicBezierLine} x
+ * @property {CubicBezierLine} x0
+ * @property {CubicBezierLine} z
  */
 
 /** @import { ProfileKey } from "./config.js" */
 
 const listeners = [];
-/** @typedef {{width: number, height: number, half?: boolean, bottom?: number}} ProfileDimentions */
+/** @typedef {{width: number, height: number, half?: boolean, bottom?: number}} ProfileDimensions */
 
-/** @type {Object.<ProfileKey, ProfileDimentions>} */
-export const profiles = {};
+/**
+ * @param board {Board}
+ * @param profile {ProfileKey}
+ * @returns {ProfileDimensions}
+ */
+export function getBoardVisualisationProfile(board, profile) {
+  switch (profile) {
+    case "top":
+      return {
+        width: board.length,
+        height: board.width,
+      };
+    case "side":
+      return {
+        width: board.length,
+        height: -board.thickness,
+      };
+    case "front":
+      return {
+        width: board.width,
+        height: -board.thickness,
+        half: true,
+      };
+    case "back": {
+      const bottom = evaluate(
+        board.yDown,
+        roots(board.yDown, { x: board.z[3].x })[0],
+      ).y;
+      return {
+        height:
+          (bottom -
+            evaluate(board.yUp, roots(board.yUp, { x: board.z[3].x })[0]).y) *
+          board.thickness,
+        width: board.z[3].y * board.width,
+        half: true,
+        bottom: bottom * board.thickness,
+      };
+    }
+    default:
+      throw Error("Profile not found");
+  }
+}
 
 addBoardChangeListener(() => {
   // recompute the required zoom for the x profile
   const { length, width } = board;
   coords.front.zoom = coords.back.zoom = length / width / 2;
-
-  profiles.top = {
-    width: board.length,
-    height: board.width,
-  };
-  profiles.side = {
-    width: board.length,
-    height: -board.thickness,
-  };
-  profiles.front = {
-    width: board.width,
-    height: -board.thickness,
-    half: true,
-  };
-  const bottom = evaluate(
-    board.yDown,
-    roots(board.yDown, { x: board.z[3].x })[0],
-  ).y;
-  profiles.back = {
-    height:
-      (bottom -
-        evaluate(board.yUp, roots(board.yUp, { x: board.z[3].x })[0]).y) *
-      board.thickness,
-    width: board.z[3].y * board.width,
-    half: true,
-    bottom: bottom * board.thickness,
-  };
 });
 
 export function commitBoardChanges() {
@@ -91,6 +122,7 @@ function inUnitInterval(t) {
 /**
  * Find a t for a given x or y
  * https://github.com/Pomax/BezierInfo-2/blob/b479e2aa867d1321200951cc13a025a8701f94c6/docs/js/graphics-element/lib/bezierjs/bezier.js#L504
+ * @param {CubicBezierLine} points
  */
 export function roots(points, { x, y }) {
   let target, pa, pb, pc, pd;
