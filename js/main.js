@@ -18,10 +18,6 @@ surf.addBoardChangeListener(() => {
   positionsAttribute.needsUpdate = true;
 });
 
-// update positions before first rendering
-surf.commitBoardChanges();
-trid.display3D();
-
 const buttons = /** @type {HTMLElement} */ (
   document.getElementById("positions")
 );
@@ -37,7 +33,7 @@ const moveSvg = (e) => {
   )
     ui.hideSvg();
 
-  ui.updateSvgLayer(profile, e.target.object.zoom, e.target.target);
+  ui.updateSvgLayerPosition(profile, e.target.object.zoom, e.target.target);
 };
 
 /**
@@ -74,10 +70,13 @@ ui.setupDimensionInputs(board, () => {
   coords.front.zoom = coords.back.zoom = length / width / 2;
   trid.camera.zoom = coords[ui.state.profile].zoom;
   trid.camera.updateProjectionMatrix();
-  surf.commitBoardChanges();
 });
 
 window.addEventListener("resize", () => {
   trid.onResize();
-  ui.updateSvgLayer(ui.state.profile);
+  ui.updateSvgLayerPosition(ui.state.profile);
 });
+
+// update positions before first rendering
+surf.modifyBoard((x) => x);
+trid.display3D();

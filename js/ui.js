@@ -40,7 +40,9 @@ export function setProfile(profile) {
       ...[...board["yDown"]].reverse(),
     ];
   }
-  draggable();
+
+  updateSvgLayerPosition(profile);
+  setupDragListeners();
 }
 
 let points, scaledPoints;
@@ -79,7 +81,7 @@ let currentWidth = 0;
  * @param {number?} [maybeZoom]
  * @param {Vector3?} [target]
  */
-export function updateSvgLayer(profileKey, maybeZoom, target) {
+export function updateSvgLayerPosition(profileKey, maybeZoom, target) {
   const {
     width,
     height,
@@ -133,10 +135,10 @@ export function updateSvgLayer(profileKey, maybeZoom, target) {
     y: (y - yHalf) / yScale,
   });
 
-  update();
+  renderSvgLayer();
 }
 
-function update() {
+function renderSvgLayer() {
   scaledPoints = points.map(scale);
   const quads = Array.from(
     {
@@ -188,9 +190,11 @@ function update() {
   );
 }
 
-function draggable() {
-  updateSvgLayer(state.profile);
-
+function setupDragListeners() {
+  /**
+   * @param {any} event
+   * @returns {null | ((dx: number, dy: number) => void)}
+   */
   function dragSubject(event) {
     const [px, py] = d3.pointer(event.sourceEvent, svg.node());
     const dist = (m) => Math.sqrt((px - m.x) ** 2 + (py - m.y) ** 2);
@@ -201,23 +205,35 @@ function draggable() {
     }
     svg.style("cursor", "hand").style("cursor", "grab");
     const { continuous, freezeX, freezeY } = points[idx];
+
+    /**
+     * @param {import("./surf.js").ControlPoint} point
+     * @param {number} dx
+     * @param {number} dy
+     */
     const move = (point, dx, dy) => {
-      point.x += (dx / xScale) * !freezeX;
-      point.y += (dy / yScale) * !freezeY;
+      if (!freezeX) point.x += dx / xScale;
+      if (!freezeY) point.y += dy / yScale;
     };
-    let direction, sibling;
-    if (continuous !== undefined) {
+
+    if (continuous != null)
+      // move all the points at the same time
       return (dx, dy) => {
-        for (let i = -1; i <= 1; i++) {
-          move(points[idx + i], dx, dy);
-        }
+        move(points[idx - 1], dx, dy);
+        move(points[idx], dx, dy);
+        move(points[idx + 1], dx, dy);
       };
-    } else if (points[idx - 1]?.continuous) {
+
+    let direction, sibling;
+    if (points[idx - 1]?.continuous) {
       direction = -1;
     } else if (points[idx + 1]?.continuous) {
       direction = 1;
     }
-    if ((sibling = points[idx + 2 * direction])) {
+
+    if (direction && (sibling = points[idx + 2 * direction])) {
+      // move the point and rotate the one bahind the control point to keep the
+      // connection continuous
       return (dx, dy) => {
         move(points[idx], dx, dy);
         Object.assign(
@@ -232,6 +248,8 @@ function draggable() {
         );
       };
     }
+
+    // move the point on its own
     return (dx, dy) => move(points[idx], dx, dy);
   }
 
@@ -250,7 +268,7 @@ function draggable() {
           commitBoardChanges();
         })
         .on("end", () => svg.style("cursor", "grab"))
-        .on("start.render drag.render end.render", update),
+        .on("start.render drag.render end.render", renderSvgLayer),
     );
 }
 
@@ -274,7 +292,7 @@ export function setupDimensionInputs(board, onAfterModified) {
       modifyBoard((board) => (board[dim] = e.target.value));
       onAfterModified();
 
-      updateSvgLayer(state.profile);
+      updateSvgLayerPosition(state.profile);
     });
   }
 }

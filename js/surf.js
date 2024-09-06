@@ -114,6 +114,7 @@ export function commitBoardChanges() {
 export function modifyBoard(modifier) {
   // board =
   modifier(board);
+  commitBoardChanges();
 }
 
 export function addBoardChangeListener(func) {
@@ -121,7 +122,6 @@ export function addBoardChangeListener(func) {
 }
 
 export const board = await (await fetch("board.json")).json();
-commitBoardChanges();
 
 const slices = Array.from(
   { length: nbSlices },
