@@ -2,7 +2,7 @@
 import * as ui from "./ui.js";
 import * as surf from "./surf.js";
 import * as trid from "./3d.js";
-import { eps, coords } from "./config.js";
+import { eps } from "./config.js";
 import { Vector3 } from "three";
 /** @import { ProfileKey } from "./config.js" */
 
@@ -23,24 +23,14 @@ const buttons = /** @type {HTMLElement} */ (
 );
 const [top, side, front, back] = buttons.children;
 
-/** @param {any} e */
-const moveSvg = (e) => {
-  const profile = ui.state.profile;
-  const { xUp, yUp, zUp } = coords[profile];
-  if (
-    !svg.classList.contains("hidden") &&
-    e.target.object.up.distanceTo(new Vector3(xUp, yUp, zUp)) > 1e-5
-  )
-    ui.hideSvg();
-
-  ui.updateSvgLayerPosition(profile, e.target.object.zoom, e.target.target);
-};
+let lastChangeListener;
 
 /**
  * @param {ProfileKey} profileKey
  */
 function moveTo(profileKey) {
-  const { profile, ...destination } = coords[profileKey];
+  const profileInfo = surf.getBoardVisualisationProfile(board, profileKey);
+  const destination = { ...profileInfo.cameraPosition, zoom: profileInfo.zoom };
   const { x, y, z, xUp, yUp, zUp, zoom } = destination;
   if (
     trid.camera.up.distanceTo(new Vector3(xUp, yUp, zUp)) < eps &&
@@ -51,10 +41,29 @@ function moveTo(profileKey) {
 
   ui.setProfile(profileKey);
 
-  trid.controls.removeEventListener("change", moveSvg);
+  /** @param {any} e */
+  const moveSvg = (e) => {
+    const { xUp, yUp, zUp } = destination;
+    if (
+      !svg.classList.contains("hidden") &&
+      e.target.object.up.distanceTo(new Vector3(xUp, yUp, zUp)) > 1e-5
+    )
+      ui.hideSvg();
+
+    ui.updateSvgLayerPosition(
+      profileKey,
+      e.target.object.zoom,
+      e.target.target,
+    );
+  };
+
+  if (lastChangeListener)
+    trid.controls.removeEventListener("change", lastChangeListener);
+
   ui.showSvg();
   trid.tweenCameraTo(destination).onComplete(() => {
     trid.controls.addEventListener("change", moveSvg);
+    lastChangeListener = moveSvg;
   });
 }
 
@@ -66,10 +75,12 @@ back.addEventListener("click", () => moveTo("back"));
 ui.setupDimensionInputs(board, () => {
   // recompute the required zoom for the x profile, should be applied only
   // conditionally
-  const { length, width } = board;
-  coords.front.zoom = coords.back.zoom = length / width / 2;
-  trid.camera.zoom = coords[ui.state.profile].zoom;
-  trid.camera.updateProjectionMatrix();
+  const profile = ui.state.profile;
+  if (profile === "front" || profile === "back") {
+    const { zoom } = surf.getBoardVisualisationProfile(board, profile);
+    trid.camera.zoom = zoom;
+    trid.camera.updateProjectionMatrix();
+  }
 });
 
 window.addEventListener("resize", () => {

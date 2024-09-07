@@ -1,7 +1,7 @@
 // @ts-check
 const { abs, cos, sin, acos, atan, sqrt, pow, PI } = Math;
 import { Vector3 } from "three";
-import { coords, nbSlices, nbPoints, nbPointsPerSlice } from "./config.js";
+import { nbSlices, nbPoints, nbPointsPerSlice } from "./config.js";
 
 /**
  * @typedef {Object} ControlPoint
@@ -37,9 +37,13 @@ const listeners = [];
  *   zoom: number,
  *   getXPan: (x: Vector3) => number,
  *   getYPan: (x: Vector3) => number,
+ *   getPoints: (board: Board) => CubicBezierLine,
+ *   cameraPosition: import("./config.js").ProfileInfo,
  *   half?: boolean,
  *   bottom?: number,
  * }} ProfileDimensions */
+
+const allZero = { x: 0, y: 0, z: 0, xUp: 0, yUp: 0, zUp: 0 };
 
 /**
  * @param board {Board}
@@ -47,6 +51,7 @@ const listeners = [];
  * @returns {ProfileDimensions}
  */
 export function getBoardVisualisationProfile(board, profile) {
+  //console.log("getBoardViz");
   switch (profile) {
     case "top":
       return {
@@ -54,7 +59,13 @@ export function getBoardVisualisationProfile(board, profile) {
         height: board.width,
         getXPan: (x) => x["y"],
         getYPan: (x) => x["x"],
+        getPoints: (board) => board.z,
         zoom: 1,
+        cameraPosition: {
+          ...allZero,
+          z: 5,
+          xUp: 1,
+        },
       };
     case "side":
       return {
@@ -62,7 +73,19 @@ export function getBoardVisualisationProfile(board, profile) {
         height: -board.thickness,
         getXPan: (x) => x["y"],
         getYPan: (x) => x["z"],
+        getPoints: (board) =>
+          /** @type {any} */ ([
+            ...board["yUp"],
+            board["yUp"].at(-1),
+            board["yDown"].at(-1),
+            ...[...board["yDown"]].reverse(),
+          ]),
         zoom: 1,
+        cameraPosition: {
+          ...allZero,
+          x: -5,
+          zUp: 1,
+        },
       };
     case "front":
       return {
@@ -71,7 +94,13 @@ export function getBoardVisualisationProfile(board, profile) {
         half: true,
         getXPan: (x) => -x["x"],
         getYPan: (x) => x["z"],
+        getPoints: (board) => board.x,
         zoom: board.length / board.width / 2,
+        cameraPosition: {
+          ...allZero,
+          y: -5,
+          zUp: 1,
+        },
       };
     case "back": {
       const bottom = evaluate(
@@ -88,19 +117,19 @@ export function getBoardVisualisationProfile(board, profile) {
         bottom: bottom * board.thickness,
         getXPan: (x) => x["x"],
         getYPan: (x) => x["z"],
+        getPoints: (board) => board.x0,
         zoom: board.length / board.width / 2,
+        cameraPosition: {
+          ...allZero,
+          y: 5,
+          zUp: 1,
+        },
       };
     }
     default:
       throw Error("Profile not found");
   }
 }
-
-addBoardChangeListener(() => {
-  // recompute the required zoom for the x profile
-  const { length, width } = board;
-  coords.front.zoom = coords.back.zoom = length / width / 2;
-});
 
 export function commitBoardChanges() {
   for (const listener of listeners) {
@@ -136,6 +165,10 @@ function crt(v) {
   return v < 0 ? -pow(-v, 1 / 3) : pow(v, 1 / 3);
 }
 
+/**
+ * Helper checking if number is in unit interval
+ * @param {number} t
+ */
 function inUnitInterval(t) {
   return 0 <= t && t <= 1;
 }

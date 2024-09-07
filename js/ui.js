@@ -7,7 +7,6 @@ import {
   modifyBoard,
   getBoardVisualisationProfile,
 } from "./surf.js";
-import { coords } from "./config.js";
 import { Vector3 } from "three";
 /** @import { ProfileKey, ProfileInfo } from "./config.js" */
 
@@ -30,17 +29,6 @@ export const state = {
  */
 export function setProfile(profile) {
   state.profile = profile;
-  points = board[coords[profile].profile];
-
-  if (profile === "side") {
-    points = [
-      ...board["yUp"],
-      board["yUp"].at(-1),
-      board["yDown"].at(-1),
-      ...[...board["yDown"]].reverse(),
-    ];
-  }
-
   updateSvgLayerPosition(profile);
   setupDragListeners();
 }
@@ -89,8 +77,11 @@ export function updateSvgLayerPosition(profileKey, maybeZoom, target) {
     bottom,
     getXPan,
     getYPan,
+    getPoints,
     zoom: defaultZoom,
   } = getBoardVisualisationProfile(board, profileKey);
+
+  points = getPoints(board);
 
   currentWidth = width;
 
