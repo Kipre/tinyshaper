@@ -287,3 +287,18 @@ export function setupDimensionInputs(board, onAfterModified) {
     });
   }
 }
+
+/**
+ * @param onOrientationChange {(x: ProfileKey) => void}
+ */
+export function setupOrientationButtons(onOrientationChange) {
+  const buttons = /** @type {HTMLElement} */ (
+    document.getElementById("positions")
+  );
+  const [top, side, front, back] = buttons.children;
+
+  top.addEventListener("click", () => onOrientationChange("top"));
+  side.addEventListener("click", () => onOrientationChange("side"));
+  front.addEventListener("click", () => onOrientationChange("front"));
+  back.addEventListener("click", () => onOrientationChange("back"));
+}

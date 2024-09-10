@@ -18,11 +18,6 @@ surf.addBoardChangeListener(() => {
   positionsAttribute.needsUpdate = true;
 });
 
-const buttons = /** @type {HTMLElement} */ (
-  document.getElementById("positions")
-);
-const [top, side, front, back] = buttons.children;
-
 let lastChangeListener;
 
 /**
@@ -67,10 +62,7 @@ function moveTo(profileKey) {
   });
 }
 
-top.addEventListener("click", () => moveTo("top"));
-side.addEventListener("click", () => moveTo("side"));
-front.addEventListener("click", () => moveTo("front"));
-back.addEventListener("click", () => moveTo("back"));
+ui.setupOrientationButtons(moveTo);
 
 ui.setupDimensionInputs(board, () => {
   // recompute the required zoom for the x profile, should be applied only
