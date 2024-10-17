@@ -58,10 +58,32 @@ a {
   margin-top: 1rem;
 }
 
-#positions {
+.positions {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0.3rem;
+}
+
+#loading-msg {
+  display: none;
+  margin-top: 1em;
+}
+
+body.loading {
+  grid-template: auto / 100% 0;
+}
+
+body.loading .title > img {
+  width: 20%;
+  margin-top: 30%;
+}
+
+body.loading .toolbar > :not(.title) {
+  display: none;
+}
+
+body.loading #loading-msg {
+  display: block;
 }
 
 .toolbar {

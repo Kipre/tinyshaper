@@ -80,6 +80,8 @@ window.addEventListener("resize", () => {
   ui.updateSvgLayerPosition(ui.state.profile);
 });
 
-// update positions before first rendering
-surf.modifyBoard((x) => x);
-trid.display3D();
+export function run() {
+  // update positions before first rendering
+  surf.modifyBoard((x) => x);
+  trid.display3D();
+}

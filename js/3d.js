@@ -28,10 +28,9 @@ export const camera = new THREE.OrthographicCamera(
 camera.position.set(-1.5, -0.5, 1);
 camera.up.set(0, 0, 1);
 
-export const controls = new TrackballControls(camera, canvas);
-controls.rotateSpeed = 2.0;
-controls.zoomSpeed = 1.2;
-controls.panSpeed = 30;
+// initializing here but the canvas still has zero size at the time of running
+// so we create a new one once the layout is ready
+export let controls = new TrackballControls(camera, canvas);
 
 const renderer = new THREE.WebGLRenderer({ canvas, alpha: true });
 renderer.setPixelRatio(window.devicePixelRatio);
@@ -64,6 +63,11 @@ geometry.setAttribute("position", new THREE.BufferAttribute(positionsArray, 3));
 geometry.setIndex(Array.from(indices));
 
 export function display3D() {
+  controls = new TrackballControls(camera, canvas);
+  controls.rotateSpeed = 2.0;
+  controls.zoomSpeed = 1.2;
+  controls.panSpeed = 30;
+
   geometry.computeVertexNormals();
 
   const mesh = new THREE.Mesh(geometry, material);

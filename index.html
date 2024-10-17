@@ -9,14 +9,15 @@
     <title>tinyshaper</title>
     <link type="text/css" rel="stylesheet" href="style.css" />
   </head>
-  <body>
+  <body class="loading">
     <div class="toolbar">
       <div class="title">
-        <img src="logo_full.svg"/>
+        <img src="logo_full.svg" />
+        <div id="loading-msg">Loading...</div>
       </div>
       <hr />
       <h4>View</h4>
-      <div id="positions">
+      <div id="positions" class="positions">
         <button>Top</button>
         <button>Side</button>
         <button>Front</button>
@@ -54,5 +55,16 @@
       }
     }
   </script>
-  <script type="module" src="js/main.js"></script>
+  <script type="module">
+    try {
+      const main = await import("/js/main.js");
+      //await new Promise((resolve) => setTimeout(() => resolve(), 1000));
+      document.body.classList.remove("loading");
+      main.run();
+    } catch (e) {
+      document.querySelector("#loading-msg").innerText =
+        "Sorry, something went wrong.";
+      throw e;
+    }
+  </script>
 </html>
