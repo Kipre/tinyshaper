@@ -57,7 +57,7 @@
   </script>
   <script type="module">
     try {
-      const main = await import("/js/main.js");
+      const main = await import(import.meta.url + "js/main.js");
       //await new Promise((resolve) => setTimeout(() => resolve(), 1000));
       document.body.classList.remove("loading");
       main.run();
